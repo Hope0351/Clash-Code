@@ -299,8 +299,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### **Live Demo**
 - **Demo Video**: already uploaded
 ### **Presentation Materials**
-- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit?utm_content=DAG-A8hVKxA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton) *(example)*
-- **API Documentation**: [documentation Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/) *(example)*
+- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit?utm_content=DAG-A8hVKxA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
+- **API Documentation**: [documentation Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/)  
 
 ## 📞 Support
 
