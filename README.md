@@ -1,4 +1,7 @@
-# 👣 TraceCtrl - Google Cloud Gemini Hackathon
+
+![photo_2026-01-10_16-50-48](https://github.com/user-attachments/assets/8861659d-57db-481a-bb38-dc1edfb47d59)
+
+# 👣 GACHENA - MLH hackathon
 
 **TraceCtrl** is a web app enables users to manage their digital footprint by identifying companies holding personal data, and allows to send GDPR requests (such as access, erase, or modifify data) via email. Users can connect to their Gmail account, scan their inbox, and send customized emails to companies in bulk or individually.
 
