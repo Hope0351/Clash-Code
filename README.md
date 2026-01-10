@@ -5,6 +5,12 @@
 
 **Gachena** is an innovative web application that empowers users to take control of their personal data by automating GDPR compliance requests. Connect your Gmail, scan your digital footprint, and send automated data privacy requests to companies holding your information.
 
+### **Live Demo**
+- **Demo Video**: [ClickMe](https://youtu.be/JzglW8pOG2s)
+### **Presentation Materials**
+- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit?utm_content=DAG-A8hVKxA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
+- **API Documentation**: [documentation Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/)
+  
 ## 🏗️ Architecture
 
 ![System Architecture](https://i.postimg.cc/zDVpcTk7/tracectrl-architecture.png)
@@ -292,12 +298,6 @@ git push origin feature/amazing-feature
 - **Osama Hasan** - DevOps & Deployment
 
 ## 🎥 Demo & Resources
-
-### **Live Demo**
-- **Demo Video**: already uploaded
-### **Presentation Materials**
-- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit?utm_content=DAG-A8hVKxA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
-- **API Documentation**: [documentation Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/)  
 
 ## 📞 Support
 
