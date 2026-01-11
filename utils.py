@@ -381,15 +381,25 @@ def get_email_template():
 def google_authenticate():
     """
     Authenticate the user with Google and return an authentication object.
-
-    Returns:
-        Authenticate: An authentication object with session management.
     """
+    # DETERMINE REDIRECT URI BASED ON ENVIRONMENT
+    # Check if running on Render (production)
+    is_render = os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_URL')
+    
+    if is_render:
+        redirect_uri = 'https://clash-code.onrender.com/'
+        st.sidebar.info("🔧 Production mode: Using Render redirect URI")
+    else:
+        redirect_uri = 'http://localhost:8501/'
+        st.sidebar.info("🔧 Development mode: Using localhost redirect URI")
+    
+    st.sidebar.write(f"📡 Redirect URI: {redirect_uri}")
+    
     authenticator = Authenticate(
         secret_credentials_path='credentials.json',
         cookie_name='my_cookie_name',
         cookie_key='this_is_secret',
-        redirect_uri='http://localhost:8501/',
+        redirect_uri=redirect_uri,  # Dynamic based on environment
     )
 
     # Catch the login event
@@ -615,7 +625,7 @@ def classify_email_with_gemini(email_content):
     You are a helpful AI that helps classify emails and extract relevant information.
 
     All emails are classified into one of the following categories: interacted, not interacted.
-    Interacted emails are triggered directly by a user’s action. 
+    Interacted emails are triggered directly by a user's action. 
     They are functional and usually contain important information, such as confirmations (order confirmations, 
     password resets, account creation), notifications about transactions, or updates on user-initiated requests.
 
