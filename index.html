@@ -3,46 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TraceCtrl - Your Data, Your Right</title>
-  <meta name="description" content="Take control over your personal data with TraceCtrl">
-  <meta name="keywords" content="data privacy, personal data, GDPR, data rights, TraceCtrl">
-  
-  <!-- Open Graph meta tags for social sharing -->
-  <meta property="og:title" content="TraceCtrl - Your Data, Your Right">
-  <meta property="og:description" content="Take control over your personal data with TraceCtrl">
-  <meta property="og:type" content="website">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔒</text></svg>">
-  
-  <!-- Preload particles.js for better performance -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  
+  <title>Particles.js</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-
-    :root {
-      --primary-color: #77dd77;
-      --primary-dark: #4CAF50;
-      --text-color: #ffffff;
-      --text-secondary: #cccccc;
-      --background-dark: #0a0a0a;
-      --animation-speed: 0.3s;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
 
     body, html {
+      margin: 0;
+      padding: 0;
       width: 100%;
       height: 100%;
       font-family: 'Roboto', sans-serif;
       overflow: hidden;
-      background-color: var(--background-dark);
     }
 
     #particles-js {
@@ -51,402 +22,192 @@
       height: 100vh;
       top: 0;
       left: 0;
-      z-index: -1;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      z-index: -1; /* Send the animation to the back */
     }
 
     .content {
       position: relative;
       z-index: 1;
-      color: var(--text-color);
+      color: white;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
       text-align: center;
-      padding: 20px;
-      animation: fadeIn 1s ease-out;
     }
 
     h1 {
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      margin-bottom: 1.5rem;
-      font-weight: 700;
-      line-height: 1.2;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      font-size: 3em;
+      margin-bottom: 20px;
     }
 
     h2 {
-      font-size: clamp(1rem, 2.5vw, 1.5rem);
-      margin-bottom: 3rem;
-      font-weight: 300;
-      color: var(--text-secondary);
-      max-width: 600px;
-      line-height: 1.6;
+      font-size: 1.5em;
+      margin-bottom: 50px;
+      font-weight: 400;
+      color: #ccc;
     }
 
     .highlight {
-      color: var(--primary-dark);
-      font-weight: 700;
-    }
+  color: #4CAF50;
+  }
 
     #changing-text {
-      display: inline-block;
-      min-width: 120px;
-      text-align: left;
-      color: var(--primary-color);
-      font-weight: 700;
-      text-shadow: 0 0 10px rgba(119, 221, 119, 0.3);
-      border-right: 3px solid var(--primary-color);
-      animation: blink-caret 0.75s step-end infinite;
-    }
-
-    .cta-button {
-      display: inline-block;
-      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
-      color: white;
-      padding: 15px 40px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      text-decoration: none;
-      border-radius: 50px;
-      border: none;
-      cursor: pointer;
-      transition: all var(--animation-speed) ease;
-      box-shadow: 0 4px 15px rgba(119, 221, 119, 0.2);
-      margin-top: 2rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .cta-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(119, 221, 119, 0.3);
-    }
-
-    .cta-button:active {
-      transform: translateY(-1px);
-    }
-
-    .loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: var(--background-dark);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      transition: opacity 0.5s ease;
-    }
-
-    .loader {
-      width: 50px;
-      height: 50px;
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top: 3px solid var(--primary-color);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes blink-caret {
-      from, to {
-        border-color: transparent;
-      }
-      50% {
-        border-color: var(--primary-color);
-      }
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes float {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-10px);
-      }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-      }
-      
-      h2 {
-        font-size: 1rem;
-        margin-bottom: 2rem;
-        padding: 0 1rem;
-      }
-      
-      .cta-button {
-        padding: 12px 30px;
-        font-size: 1rem;
-      }
-      
-      #changing-text {
-        min-width: 100px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.8rem;
-      }
-      
-      h2 {
-        font-size: 0.9rem;
-      }
-    }
-
-    /* Reduced motion preferences */
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-      
-      .loader {
-        animation: none;
-      }
-      
-      .cta-button:hover {
-        transform: none;
-      }
+    white-space: nowrap;
+    overflow: hidden;
+    color: #77dd77;
+    animation: blink-caret 0.75s step-end infinite;
     }
   </style>
 </head>
 <body>
-  <!-- Loading Screen -->
-  <div class="loading-screen" id="loadingScreen">
-    <div class="loader"></div>
-  </div>
-
   <div id="particles-js"></div>
-  
   <div class="content">
     <h1>Your Data, Your Right to <span id="changing-text"></span></h1>
-    <h2>Take control over your personal data with TraceCtrl. Exercise your GDPR rights with one click.</h2>
-    <button class="cta-button" onclick="handleCTAClick()">Get Started</button>
+    <h2>Take control over your personal data with TraceCtrl</h2>
   </div>
-
-  <!-- Use defer for better loading performance -->
-  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js" defer></script>
-  
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script>
-    // Wait for DOM to be fully loaded
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initialize particles.js with optimized settings
-      if (typeof particlesJS !== 'undefined') {
-        particlesJS("particles-js", getParticlesConfig());
-      }
-      
-      // Hide loading screen after everything is loaded
-      window.addEventListener('load', function() {
-        const loadingScreen = document.getElementById('loadingScreen');
-        setTimeout(() => {
-          loadingScreen.style.opacity = '0';
-          setTimeout(() => {
-            loadingScreen.style.display = 'none';
-          }, 500);
-        }, 500);
-      });
-      
-      // Initialize text animation
-      initTextAnimation();
-    });
-
-    // Particles.js configuration
-    function getParticlesConfig() {
-      return {
-        "particles": {
-          "number": {
-            "value": window.innerWidth < 768 ? 150 : 300,
-            "density": {
-              "enable": true,
-              "value_area": 800
-            }
-          },
-          "color": {
-            "value": "#ffffff"
-          },
-          "shape": {
-            "type": "edge",
-            "stroke": {
-              "width": 0,
-              "color": "#000000"
-            }
-          },
-          "opacity": {
-            "value": 0.5,
-            "random": true,
-            "anim": {
-              "enable": true,
-              "speed": 1,
-              "opacity_min": 0.2,
-              "sync": false
-            }
-          },
-          "size": {
-            "value": 2,
-            "random": true,
-            "anim": {
-              "enable": true,
-              "speed": 2,
-              "size_min": 0.5,
-              "sync": false
-            }
-          },
-          "line_linked": {
+    particlesJS("particles-js", {
+      "particles": {
+        "number": {
+          "value": 300,
+          "density": {
             "enable": true,
-            "distance": 120,
-            "color": "#77dd77",
-            "opacity": 0.22,
-            "width": 1
-          },
-          "move": {
-            "enable": true,
-            "speed": window.innerWidth < 768 ? 0.1 : 0.2,
-            "direction": "none",
-            "random": true,
-            "straight": false,
-            "out_mode": "out",
-            "bounce": false,
-            "attract": {
-              "enable": false,
-              "rotateX": 600,
-              "rotateY": 1200
-            }
+            "value_area": 800
           }
         },
-        "interactivity": {
-          "detect_on": "canvas",
-          "events": {
-            "onhover": {
-              "enable": true,
-              "mode": "grab"
-            },
-            "onclick": {
-              "enable": true,
-              "mode": "repulse"
-            },
-            "resize": true
+        "color": {
+          "value": "#ffffff"
+        },
+        "shape": {
+          "type": "edge",
+          "stroke": {
+            "width": 0,
+            "color": "#000000"
           },
-          "modes": {
-            "grab": {
-              "distance": 120,
-              "line_linked": {
-                "opacity": 0.8
-              }
-            },
-            "repulse": {
-              "distance": 150,
-              "duration": 0.4
-            }
+          "polygon": {
+            "nb_sides": 5
           }
         },
-        "retina_detect": true
-      };
-    }
-
-    // Text animation
-    function initTextAnimation() {
-      const phrases = ['Access', 'Erase', 'Modify', 'Control', 'Protect'];
-      const htmlElement = document.getElementById('changing-text');
-      let currentPhrase = 0;
-      let currentCharacter = 0;
-      let forward = true;
-      let intervalId = null;
-      let typingSpeed = 100;
-      let delayBeforeDelete = 1500;
-
-      function typeWriter() {
-        if (forward) {
-          if (currentCharacter < phrases[currentPhrase].length) {
-            currentCharacter++;
-            htmlElement.textContent = phrases[currentPhrase].substr(0, currentCharacter);
-          } else {
-            forward = false;
-            clearInterval(intervalId);
-            setTimeout(() => {
-              intervalId = setInterval(typeWriter, typingSpeed / 2);
-            }, delayBeforeDelete);
+        "opacity": {
+          "value": 0.5,
+          "random": false,
+          "anim": {
+            "enable": false,
+            "speed": 1,
+            "opacity_min": 0.2,
+            "sync": false
           }
-        } else {
-          if (currentCharacter > 0) {
-            currentCharacter--;
-            htmlElement.textContent = phrases[currentPhrase].substr(0, currentCharacter);
-          } else {
-            forward = true;
-            currentPhrase = (currentPhrase + 1) % phrases.length;
-            // Speed up typing on the first character
-            clearInterval(intervalId);
-            intervalId = setInterval(typeWriter, typingSpeed);
+        },
+        "size": {
+          "value": 2,
+          "random": true,
+          "anim": {
+            "enable": false,
+            "speed": 40,
+            "size_min": 0.1,
+            "sync": false
+          }
+        },
+        "line_linked": {
+          "enable": true,
+          "distance": 100,
+          "color": "#77dd77",
+          "opacity": 0.22,
+          "width": 1
+        },
+        "move": {
+          "enable": true,
+          "speed": 0.2,
+          "direction": "none",
+          "random": false,
+          "straight": false,
+          "out_mode": "out",
+          "bounce": true,
+          "attract": {
+            "enable": false,
+            "rotateX": 600,
+            "rotateY": 1200
           }
         }
-      }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": {
+          "onhover": {
+            "enable": true,
+            "mode": "grab"
+          },
+          "onclick": {
+            "enable": true,
+            "mode": "repulse"
+          },
+          "resize": true
+        },
+        "modes": {
+          "grab": {
+            "distance": 100,
+            "line_linked": {
+              "opacity": 1
+            }
+          },
+          "bubble": {
+            "distance": 400,
+            "size": 2,
+            "duration": 2,
+            "opacity": 0.5,
+            "speed": 1
+          },
+          "repulse": {
+            "distance": 200,
+            "duration": 0.4
+          },
+          "push": {
+            "particles_nb": 2
+          },
+          "remove": {
+            "particles_nb": 3
+          }
+        }
+      },
+      "retina_detect": true
+    });
 
-      // Start animation
-      intervalId = setInterval(typeWriter, typingSpeed);
-      
-      // Pause animation on hover
-      htmlElement.addEventListener('mouseenter', () => {
-        clearInterval(intervalId);
-        htmlElement.style.animation = 'none';
-      });
-      
-      htmlElement.addEventListener('mouseleave', () => {
-        htmlElement.style.animation = 'blink-caret 0.75s step-end infinite';
+   const phrases = ['Access', 'Erase', 'Modify'];
+        let currentPhrase = 0;
+        let currentCharacter = 0;
+        let htmlElement = document.getElementById('changing-text');
+        let forward = true;
+        let intervalId = null;
+        let typingSpeed = 200;
+        let delayBeforeDelete = 1000;
+
+        function typeWriter() {
+            if (forward) {
+                if (currentCharacter < phrases[currentPhrase].length) {
+                    currentCharacter++;
+                    htmlElement.textContent = phrases[currentPhrase].substr(0, currentCharacter);
+                } else {
+                    forward = false;
+                    clearInterval(intervalId);
+                    setTimeout(() => {
+                        intervalId = setInterval(typeWriter, typingSpeed);
+                    }, delayBeforeDelete); // Wait before starting to delete
+                }
+            } else {
+                if (currentCharacter > 0) {
+                    currentCharacter--;
+                    htmlElement.textContent = phrases[currentPhrase].substr(0, currentCharacter);
+                } else {
+                    forward = true;
+                    currentPhrase = (currentPhrase + 1) % phrases.length; // Move to the next phrase
+                }
+            }
+        }
+
         intervalId = setInterval(typeWriter, typingSpeed);
-      });
-    }
-
-    // Handle CTA button click
-    function handleCTAClick() {
-      const button = document.querySelector('.cta-button');
-      button.innerHTML = 'Redirecting...';
-      button.disabled = true;
-      
-      // Add a small delay for UX
-      setTimeout(() => {
-        // Replace with your actual redirect URL
-        window.location.href = 'https://your-app-url.com/dashboard';
-      }, 500);
-    }
-
-    // Handle window resize for responsive particles
-    let resizeTimeout;
-    window.addEventListener('resize', function() {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(function() {
-        if (typeof particlesJS !== 'undefined' && window.pJSDom && window.pJSDom[0]) {
-          window.pJSDom[0].pJS.fn.vendors.destroypJS();
-          particlesJS("particles-js", getParticlesConfig());
-        }
-      }, 250);
-    });
   </script>
 </body>
 </html>
