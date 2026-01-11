@@ -10,6 +10,11 @@ from utils import (
 
 def initialize_authenticator():
     """Authenticate the user and initialize Google service if connected."""
+    # Add environment detection for debugging
+    import os
+    is_render = os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_URL')
+    st.sidebar.write(f"🌍 Running on: {'Render (Production)' if is_render else 'Local Development'}")
+    
     authenticator = google_authenticate()
     with st.sidebar:
         authenticator.login()
@@ -176,10 +181,16 @@ def sidebar_footer():
         """)
 
 def main():
+    # Add app configuration
+    st.set_page_config(
+        page_title="Gachena - Control Your Digital Footprint",
+        page_icon="👣",
+        layout="wide"
+    )
+    
     if initialize_authenticator():
         display_options()
     sidebar_footer()
 
 if __name__ == '__main__':
     main()
-
