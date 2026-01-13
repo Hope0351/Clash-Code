@@ -2,6 +2,16 @@
 # 👣 [GACHENA](https://youtu.be/JzglW8pOG2s) - MLH Hackathon  
 **Detect · Protect · Control Your Digital Footprint**
 
+## 🎥 Demo & Resources
+
+### **Live Demo**
+- **Application**: [https://gachena-app.com](https://clash-code.onrender.com/) 
+- **Demo Video**: [Watch on YouTube](https://youtu.be/JzglW8pOG2s)
+
+### **Presentation Materials**
+- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit) 
+- **API Documentation**: [MLH Collection](https://postman.com/collection) 
+
 
 **Gachena** is an innovative web application that empowers users to take control of their personal data by automating GDPR compliance requests. Connect your Gmail, scan your digital footprint, and send automated data privacy requests to companies holding your information.
 
@@ -289,16 +299,6 @@ git push origin feature/amazing-feature
 - **Abdi Megersa** - Backend & AI Integration
 - **Eba Alemu** - Frontend & UI Design  
 - **Osama Hasan** - DevOps & Deployment
-
-## 🎥 Demo & Resources
-
-### **Live Demo**
-- **Application**: [https://gachena-app.com](https://clash-code.onrender.com/) 
-- **Demo Video**: [Watch on YouTube](https://youtu.be/JzglW8pOG2s)
-
-### **Presentation Materials**
-- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit) 
-- **API Documentation**: [MLH Collection](https://postman.com/collection) 
 
 ## 📞 Support
 
