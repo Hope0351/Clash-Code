@@ -10,7 +10,7 @@
 
 ### **Presentation Materials**
 - **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit) 
-- **API Documentation**: [MLH Collection](https://postman.com/collection) 
+- **API Documentation**: [MLH Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/) 
 
 
 **Gachena** is an innovative web application that empowers users to take control of their personal data by automating GDPR compliance requests. Connect your Gmail, scan your digital footprint, and send automated data privacy requests to companies holding your information.
