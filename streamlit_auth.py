@@ -5,10 +5,18 @@ import os
 import time
 import streamlit as st
 from typing import Literal
-import google_auth_oauthlib.flow
-from googleapiclient.discovery import build
 import json
 from streamlit_auth_cookie import CookieHandler
+
+
+def _import_oauth_flow():
+    import google_auth_oauthlib.flow
+    return google_auth_oauthlib.flow
+
+
+def _import_google_api_build():
+    from googleapiclient.discovery import build
+    return build
 
 
 class Authenticate:
@@ -20,10 +28,12 @@ class Authenticate:
         self.cookie_handler = CookieHandler(cookie_name,
                                             cookie_key,
                                             cookie_expiry_days)
+        self._credentials_file_exists = os.path.isfile(secret_credentials_path)
 
     def get_authorization_url(self) -> str:
-        flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-            self.secret_credentials_path,  # replace with you json credentials from your google auth app
+        flow_module = _import_oauth_flow()
+        flow = flow_module.Flow.from_client_secrets_file(
+            self.secret_credentials_path,
             scopes=[
                 "openid",
                 "https://www.googleapis.com/auth/userinfo.profile",
@@ -47,25 +57,32 @@ class Authenticate:
 
     def login(self, color: Literal['white', 'blue'] = 'blue', justify_content: str = "center", sidebar=False) -> tuple:
         if not st.session_state['connected']:
-            flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-                self.secret_credentials_path,  # replace with you json credentials from your google auth app
-            scopes=[
-                "openid",
-                "https://www.googleapis.com/auth/userinfo.profile",
-                "https://www.googleapis.com/auth/gmail.readonly",
-                "https://www.googleapis.com/auth/gmail.send",
-                "https://www.googleapis.com/auth/userinfo.email"
-            ],
-                redirect_uri=self.redirect_uri,
-            )
+            # If no credentials file, show a clear message instead of crashing
+            if not self._credentials_file_exists:
+                st.warning("Google OAuth credentials file not found. Place your `credentials.json` in the project root, or enable **Demo Mode** above.")
+                return
 
-            authorization_url, state = flow.authorization_url(
-                access_type="offline",
-                include_granted_scopes="false",
-                prompt="consent"
-            )
+            try:
+                flow_module = _import_oauth_flow()
+                flow = flow_module.Flow.from_client_secrets_file(
+                    self.secret_credentials_path,
+                    scopes=[
+                        "openid",
+                        "https://www.googleapis.com/auth/userinfo.profile",
+                        "https://www.googleapis.com/auth/gmail.readonly",
+                        "https://www.googleapis.com/auth/gmail.send",
+                        "https://www.googleapis.com/auth/userinfo.email"
+                    ],
+                    redirect_uri=self.redirect_uri,
+                )
 
-            html_content = f"""
+                authorization_url, state = flow.authorization_url(
+                    access_type="offline",
+                    include_granted_scopes="false",
+                    prompt="consent"
+                )
+
+                html_content = f"""
 <div style="display: flex; justify-content: {justify_content};">
     <a href="{authorization_url}" target="_self" style="background-color: {'#fff' if color == 'white' else '#4285f4'}; color: {'#000' if color == 'white' else '#fff'}; text-decoration: none; text-align: center; font-size: 16px; margin: 4px 2px; cursor: pointer; padding: 8px 12px; border-radius: 4px; display: flex; align-items: center;">
         <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Google logo" style="margin-right: 8px; width: 26px; height: 26px; background-color: white; border: 2px solid white; border-radius: 4px;">
@@ -73,10 +90,12 @@ class Authenticate:
     </a>
 </div>
 """
-            if sidebar:
-                st.sidebar.markdown(html_content, unsafe_allow_html=True)
-            else:
-                st.markdown(html_content, unsafe_allow_html=True)
+                if sidebar:
+                    st.sidebar.markdown(html_content, unsafe_allow_html=True)
+                else:
+                    st.markdown(html_content, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Failed to initialize Google OAuth: {e}")
 
     def check_authentification(self):
         if not st.session_state['connected']:
@@ -105,37 +124,42 @@ class Authenticate:
             if not st.session_state['connected']:
                 auth_code = st.query_params.get("code")
                 st.query_params.clear()
-                if auth_code:
-                    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-                        self.secret_credentials_path,  # replace with you json credentials from your google auth app
-                        scopes=[
-                            "openid",
-                            "https://www.googleapis.com/auth/userinfo.profile",
-                            "https://www.googleapis.com/auth/gmail.readonly",
-                            "https://www.googleapis.com/auth/gmail.send",
-                            "https://www.googleapis.com/auth/userinfo.email"
-                        ],
-                        redirect_uri=self.redirect_uri,
-                    )
-                    flow.fetch_token(code=auth_code)
-                    credentials = flow.credentials
+                if auth_code and self._credentials_file_exists:
+                    try:
+                        flow_module = _import_oauth_flow()
+                        flow = flow_module.Flow.from_client_secrets_file(
+                            self.secret_credentials_path,
+                            scopes=[
+                                "openid",
+                                "https://www.googleapis.com/auth/userinfo.profile",
+                                "https://www.googleapis.com/auth/gmail.readonly",
+                                "https://www.googleapis.com/auth/gmail.send",
+                                "https://www.googleapis.com/auth/userinfo.email"
+                            ],
+                            redirect_uri=self.redirect_uri,
+                        )
+                        flow.fetch_token(code=auth_code)
+                        credentials = flow.credentials
 
-                    # Store credentials in session state
-                    st.session_state["credentials"] = credentials.to_json()
+                        # Store credentials in session state
+                        st.session_state["credentials"] = credentials.to_json()
 
-                    user_info_service = build(
-                        serviceName="oauth2",
-                        version="v2",
-                        credentials=credentials,
-                    )
-                    user_info = user_info_service.userinfo().get().execute()
+                        build_func = _import_google_api_build()
+                        user_info_service = build_func(
+                            serviceName="oauth2",
+                            version="v2",
+                            credentials=credentials,
+                        )
+                        user_info = user_info_service.userinfo().get().execute()
 
-                    st.session_state["connected"] = True
-                    st.session_state["oauth_id"] = user_info.get("id")
-                    st.session_state["user_info"] = user_info
-                    self.cookie_handler.set_cookie(user_info.get("name"), user_info.get("email"),
-                                                   user_info.get("picture"), user_info.get("id"))
-                    st.rerun()
+                        st.session_state["connected"] = True
+                        st.session_state["oauth_id"] = user_info.get("id")
+                        st.session_state["user_info"] = user_info
+                        self.cookie_handler.set_cookie(user_info.get("name"), user_info.get("email"),
+                                                       user_info.get("picture"), user_info.get("id"))
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Authentication failed: {e}")
 
     def logout(self):
         st.session_state['logout'] = True

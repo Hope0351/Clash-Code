@@ -1,107 +1,107 @@
 ![Gachena Banner](https://github.com/user-attachments/assets/8861659d-57db-481a-bb38-dc1edfb47d59)
-# 👣 [GACHENA](https://youtu.be/JzglW8pOG2s) - MLH Hackathon
-**Detect · Protect · Control Your Digital Footprint**
+# GACHENA - MLH Hackathon
+**Detect - Protect - Control Your Digital Footprint**
 
-## 🎥 Demo & Resources
+## Demo & Resources
 
-### **Live Demo**
+### Live Demo
 - **Application**: [https://gachena-app.com](https://gachena-app.com/)
 - **Demo Video**: [Watch on YouTube](https://youtu.be/JzglW8pOG2s)
 
-### **Presentation Materials**
+### Presentation Materials
 - **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit)
-- **API Documentation**: [MLH Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/)
-
 
 **Gachena** is an innovative web application that empowers users to take control of their personal data by automating GDPR compliance requests. Connect your Gmail, scan your digital footprint, and send automated data privacy requests to companies holding your information.
 
-## 📸 Screenshots
+## Screenshots
 
 ### Landing Page
-The welcome screen with an interactive particle animation greets users before they sign in.
+The welcome screen with an interactive particle animation greets users before they sign in. Demo mode is enabled by default so you can explore without any API keys.
 
 ![Landing Page](docs/screenshots/01_landing_page.png)
 
-### Dashboard
-After signing in with Google, the main dashboard provides step-by-step instructions and quick access to scanning controls.
+### Scan Results
+After clicking "Scan Inbox" in demo mode, the app loads 18 sample emails and identifies 13 unique companies that have your data. Each company is classified as "Interacted" or "Not Interacted" based on AI analysis.
 
-![Dashboard](docs/screenshots/03_dashboard.png)
+![Scan Results](docs/screenshots/02_scan_results.png)
 
 ### Company Data Table
-Detected companies are displayed in an interactive table where users can select which companies to send GDPR requests to, and choose the request type (Access, Modify, or Erase).
+Detected companies are displayed in an interactive table. Select companies using checkboxes and choose a request type: Request Data (Article 15), Modify Data (Article 16), or Erase Data (Article 17).
 
-![Data Table](docs/screenshots/05_data_table_and_bot.png)
+![Data Table](docs/screenshots/03_data_table.png)
 
-### Sidebar Navigation
-The sidebar shows user profile information and provides quick access to log out.
+### Sidebar
+The sidebar shows user profile information, the demo mode toggle, and provides quick access to log out.
 
-![Sidebar](docs/screenshots/06_sidebar.png)
+![Sidebar](docs/screenshots/04_sidebar.png)
 
-## 🏗️ Architecture
+### Advanced Options
+Customize your scan with date range, category filters, and max emails per category. These options apply to live Gmail scanning mode.
 
-![System Architecture](https://i.postimg.cc/zDVpcTk7/gachena-architecture.png)
+![Advanced Options](docs/screenshots/05_advanced_options.png)
 
-## ✨ Features
+### Run Bot
+Once companies are selected, click "Run Bot" to preview and send GDPR compliance emails. Enable "Preview Email" to review before sending (single selection), or disable it for bulk send.
 
-### 🔐 **Smart Authentication**
+![Run Bot](docs/screenshots/06_run_bot.png)
+
+## Features
+
+### Smart Authentication
 - **Google OAuth Integration**: Secure login with Gmail account
 - **Granular Permission Scopes**: Access only to Gmail read/send capabilities
 - **Session Management**: Persistent login with cookie-based authentication
+- **Demo Mode**: Explore the full app without any credentials or API keys
 
-### 🤖 **AI-Powered Analysis**
+### AI-Powered Analysis
 - **Email Intelligence**: Gemini AI analyzes email content to identify companies and interaction types
 - **Company Detection**: Automatically extracts company names and websites from emails
 - **Privacy Policy Discovery**: FireCrawl integration finds privacy policy pages from company domains
 - **GDPR Contact Extraction**: AI extracts GDPR-specific email addresses from privacy policies
 
-### 📊 **Interactive Dashboard**
+### Interactive Dashboard
 - **Visual Data Table**: Review all detected companies with logos and categorization
 - **Advanced Filtering**: Customize date ranges and exclude email categories
 - **Selection Interface**: Choose companies and request types with checkboxes
 - **Real-time Preview**: Preview GDPR emails before sending
 
-### 📧 **Automated Compliance**
+### Automated Compliance
 - **Dynamic Templates**: Customizable GDPR request templates (Access, Erase, Modify)
 - **Bulk Operations**: Send requests to multiple companies simultaneously
 - **Email Validation**: Verify extracted email addresses before sending
 - **Send Logs**: Track all sent requests with timestamps
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-### **Backend & AI**
-- **Python 3.11+**: Core application logic
+### Backend & AI
+- **Python 3.12+**: Core application logic
 - **Google Gemini 1.5 Flash**: AI-powered email and document analysis
 - **Vertex AI Integration**: Cloud-based AI model hosting
 - **Google Gmail API**: Email reading and sending capabilities
 - **FireCrawl**: Web scraping for privacy policy discovery
 
-### **Frontend & UI**
+### Frontend & UI
 - **Streamlit**: Interactive web application framework
 - **Pandas**: Data manipulation and table display
-- **HTML/CSS**: Custom UI components and styling
+- **HTML/CSS**: Custom landing page with particles.js animation
 
-### **Authentication & Security**
+### Authentication & Security
 - **Google OAuth 2.0**: Secure user authentication
 - **JWT Tokens**: Session management and security (configurable secret key)
 - **Cookie-based Auth**: Persistent user sessions
 
-### **Deployment & DevOps**
+### Deployment & DevOps
 - **Docker**: Containerized application (non-root user)
-- **Google Container Registry**: Image storage and management
 - **Google Cloud Run**: Serverless deployment platform
 - **Environment Variables**: Secure configuration management via `.env`
 
-## 🚀 Quick Start
+## Quick Start
 
-### **Prerequisites**
-- Python 3.11 or higher
-- Google Cloud Project with Gmail API enabled
-- Gemini API access (Vertex AI)
-- FireCrawl API key
-- Logo.dev API key
-- A Google OAuth 2.0 client (download as `credentials.json`)
+### Prerequisites
+- Python 3.12 or higher
+- pip (Python package manager)
 
-### **Installation**
+### Demo Mode (No API Keys Needed)
 
 1. **Clone the repository**
 ```bash
@@ -114,108 +114,92 @@ cd Clash-Code
 pip install -r requirements.txt
 ```
 
-3. **Configure environment variables**
-```bash
-# Copy the example env file
-cp .env.example .env
-# Then edit .env with your actual keys
-```
-
-Your `.env` file should look like:
-```bash
-# Google OAuth (credentials.json still needed for OAuth flow)
-GOOGLE_REDIRECT_URI=http://localhost:8501/
-
-# API Keys
-FIRECRAWL_API_KEY=your_firecrawl_key
-LOGODEV_API_KEY=your_logodev_key
-
-# Vertex AI
-SERVICE_ACCOUNT_PATH=service_acc.json
-VERTEX_PROJECT=your-gcp-project-id
-VERTEX_LOCATION=us-central1
-
-# Security - CHANGE THIS IN PRODUCTION!
-COOKIE_KEY=your_random_secret_string_here
-```
-
-4. **Set up Google OAuth**
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create OAuth 2.0 credentials
-   - Add `http://localhost:8501` to authorized redirect URIs
-   - Download OAuth credentials as `credentials.json` to project root
-   - Download Vertex AI service account key as `service_acc.json` to project root
-
-5. **Run the application**
+3. **Run the application**
 ```bash
 streamlit run app.py
 ```
 
-6. **Access the application**
-Open your browser and navigate to `http://localhost:8501`
+4. **Open your browser** and navigate to `http://localhost:8501`
 
-## 📖 Usage Guide
+Demo mode is enabled by default. You'll see a demo user profile and can click "Scan Inbox" to load sample data immediately. No Google credentials, API keys, or configuration needed.
 
-### **Step 1: Authenticate**
-- Click "Sign in with Google" in the sidebar
-- Grant necessary permissions for Gmail access
-- Your profile will load with personalized greeting
+### Live Mode (With Gmail)
 
-### **Step 2: Scan Your Inbox**
-- Click "Scan Inbox" to analyze recent emails
-- Toggle **Demo Mode** to use pre-loaded sample data (no API calls)
+For full functionality with real Gmail scanning, you'll need:
+
+1. **Google Cloud Project** with:
+   - Gmail API enabled
+   - Vertex AI API enabled
+   - OAuth 2.0 credentials (download as `credentials.json`)
+   - Service account key (download as `service_acc.json`)
+
+2. **API Keys**:
+   - [FireCrawl](https://firecrawl.dev) - for privacy policy discovery
+   - [Logo.dev](https://logo.dev) - for company logo retrieval
+
+3. **Configure environment**:
+```bash
+cp .env.example .env
+# Edit .env with your actual keys
+```
+
+4. **Run** with demo mode toggled off:
+```bash
+streamlit run app.py
+```
+
+## Usage Guide
+
+### Step 1: Authenticate
+- **Demo Mode**: Automatically logged in as "Demo User" - no action needed
+- **Live Mode**: Click "Sign in with Google" in the sidebar and grant permissions
+
+### Step 2: Scan Your Inbox
+- Click **Scan Inbox** to analyze recent emails
+- In demo mode, 18 pre-loaded sample emails are processed instantly
+- In live mode, emails are fetched from your Gmail and analyzed by Gemini AI
 - Adjust date range and filters in "Advanced Options"
-- View detected companies with logos and categories
 
-### **Step 3: Select Companies**
+### Step 3: Select Companies
 - Browse the interactive table of detected companies
-- Select companies using checkboxes
-- Choose request type for each: Access, Erase, or Modify
+- Select companies using checkboxes in the leftmost column
+- Choose request type for each: Request Data, Erase Data, or Modify Data
 
-### **Step 4: Send Requests**
-- Click "Run Bot" to process selections
-- Enable "Preview Email" to review before sending (single selection)
+### Step 4: Send Requests
+- Click **Run Bot** to process your selections
+- Enable **Preview Email** to review before sending (single selection only)
 - Disable preview for bulk send to multiple companies
-- Track success notifications for each sent request
+- In demo mode, preview works but actual sending is disabled
 
-## 🔧 Configuration
+## Configuration
 
-### **API Keys Setup**
-
-| Service | How to Obtain | Usage |
-|---------|---------------|-------|
-| **FireCrawl** | Sign up at [firecrawl.dev](https://firecrawl.dev) | Privacy policy discovery |
-| **Logo.dev** | Request access at [logo.dev](https://logo.dev) | Company logo retrieval |
-| **Gemini AI** | Google Cloud Vertex AI console | Email and document analysis |
-| **Gmail API** | Google Cloud Console API Library | Email reading and sending |
-
-### **Environment Variables**
+### Environment Variables
 
 See [`.env.example`](.env.example) for the full list of configurable options:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `FIRECRAWL_API_KEY` | Yes | - | FireCrawl API key |
-| `LOGODEV_API_KEY` | Yes | - | Logo.dev API key |
-| `SERVICE_ACCOUNT_PATH` | Yes | `service_acc.json` | Path to Vertex AI service account JSON |
-| `VERTEX_PROJECT` | Yes | - | Your GCP project ID |
-| `COOKIE_KEY` | Yes | - | JWT signing secret (use a strong random string) |
+| `FIRECRAWL_API_KEY` | Live mode | - | FireCrawl API key for privacy policy discovery |
+| `LOGODEV_API_KEY` | Optional | - | Logo.dev API key for company logos |
+| `SERVICE_ACCOUNT_PATH` | Live mode | `service_acc.json` | Path to Vertex AI service account JSON |
+| `VERTEX_PROJECT` | Live mode | - | Your GCP project ID |
+| `COOKIE_KEY` | Production | `change_me_in_production` | JWT signing secret |
 | `GOOGLE_REDIRECT_URI` | No | `http://localhost:8501/` | OAuth redirect URI |
 | `GEMINI_MODEL` | No | `gemini-1.5-flash-001` | Vertex AI model name |
 | `MAX_GEMINI_RETRIES` | No | `3` | Max retries on rate limit (429) |
 | `GEMINI_RETRY_DELAY` | No | `60` | Base delay in seconds between retries |
 | `COOKIE_EXPIRY_DAYS` | No | `30` | Days until auth cookie expires |
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
-### **Build Docker Image**
+### Build Docker Image
 ```bash
 docker build -t gachena-app .
 ```
 
-### **Run Container**
+### Run Container
 ```bash
-docker run -p 8501:8501 \
+docker run -p 8501:8080 \
   -v $(pwd)/credentials.json:/app/credentials.json:ro \
   -v $(pwd)/service_acc.json:/app/service_acc.json:ro \
   -e FIRECRAWL_API_KEY=your_key \
@@ -225,7 +209,7 @@ docker run -p 8501:8501 \
   gachena-app
 ```
 
-### **Docker Compose**
+### Docker Compose
 ```yaml
 version: '3.8'
 services:
@@ -244,79 +228,58 @@ services:
     restart: unless-stopped
 ```
 
-## ☁️ Cloud Deployment
-
-### **Google Cloud Run**
-```bash
-# Build and push to Google Container Registry
-gcloud builds submit --tag gcr.io/your-project/gachena
-
-# Deploy to Cloud Run
-gcloud run deploy gachena \
-  --image gcr.io/your-project/gachena \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars="FIRECRAWL_API_KEY=$FIRECRAWL_KEY,VERTEX_PROJECT=$PROJECT_ID,COOKIE_KEY=$SECRET"
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 Clash-Code/
-├── app.py                 # Main Streamlit application
-├── utils.py               # Core business logic, AI, Gmail API
-├── streamlit_auth.py      # Google OAuth authentication module
-├── streamlit_auth_cookie.py # JWT cookie session management
-├── requirements.txt       # Pinned Python dependencies
-├── Dockerfile             # Container config (non-root user)
-├── .dockerignore          # Docker build exclusions
-├── .gitignore             # Git exclusions (secrets)
-├── .env.example           # Environment variable template
-├── index.html             # Landing page (particles.js animation)
-├── diagnostic.py          # OAuth setup debug utility
+├── app.py                      # Main Streamlit application
+├── utils.py                    # Core business logic, AI, Gmail API (lazy imports)
+├── streamlit_auth.py           # Google OAuth authentication module
+├── streamlit_auth_cookie.py    # JWT cookie session management
+├── requirements.txt            # Pinned Python dependencies
+├── Dockerfile                  # Container config (non-root user)
+├── .dockerignore               # Docker build exclusions
+├── .gitignore                  # Git exclusions (secrets)
+├── .env.example                # Environment variable template
+├── index.html                  # Landing page (particles.js animation)
 ├── gemini_processed_emails.json # Sample email data for demo mode
-├── LICENSE                # MIT License
-└── README.md              # This file
+├── docs/
+│   └── screenshots/            # Application screenshots
+│       ├── 01_landing_page.png
+│       ├── 02_scan_results.png
+│       ├── 03_data_table.png
+│       ├── 04_sidebar.png
+│       ├── 05_advanced_options.png
+│       └── 06_run_bot.png
+├── LICENSE                     # MIT License
+└── README.md                   # This file
 ```
 
-## 🧪 Testing
+## Architecture
 
-### **Run Diagnostic Tests**
-```bash
-python diagnostic.py
-```
+The application follows a modular architecture designed for both demo and production use:
 
-### **Test Authentication Flow**
-```bash
-python -c "from utils import google_authenticate; auth = google_authenticate(); print('Auth module loaded successfully')"
-```
+- **Lazy Import System**: Heavy dependencies (Vertex AI, Gmail API, etc.) are only imported when actually needed in live mode. Demo mode requires only `streamlit`, `pandas`, and `requests`.
+- **Demo Mode Bypass**: When demo mode is active, the entire OAuth flow is skipped and a mock user session is created. Data is loaded from a local JSON file instead of Gmail.
+- **Fragment-Free Rendering**: The UI uses standard Streamlit components without `@st.fragment` decorators to ensure reliable rendering across all Streamlit versions.
+- **Graceful Degradation**: If `credentials.json` is missing, the app shows a clear message instead of crashing.
 
-### **Check API Connections**
-```bash
-# Test FireCrawl connection
-curl -X POST https://api.firecrawl.dev/v1/scrape \
-  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com"}'
-```
+## Security & Privacy
 
-## 🔒 Security & Privacy
-
-### **Data Protection**
+### Data Protection
 - **No Data Storage**: Emails are processed in memory, not stored
 - **End-to-End Encryption**: All API communications use HTTPS
 - **Minimal Permissions**: Only requested Gmail scopes are accessed
 - **Session Isolation**: User data is never shared between sessions
 - **Configurable Secrets**: All sensitive keys loaded from environment variables
 
-### **Compliance**
-- **GDPR Compliant**: Helps users exercise GDPR rights
+### Compliance
+- **GDPR Compliant**: Helps users exercise GDPR rights (Articles 15, 16, 17)
 - **Transparent Operations**: Clear indication of all actions taken
 - **User Consent**: Explicit permission for each email scan
 - **Right to Revoke**: Users can disconnect access at any time
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how:
 
@@ -335,19 +298,19 @@ git push origin feature/amazing-feature
 ```
 5. **Open a Pull Request**
 
-## 👥 Team
+## Team
 
 **Gachena** was developed by a team of three during the MLH Hackathon:
 - **Abdi Megersa** - Backend & AI Integration
 - **Eba Alemu** - Frontend & UI Design
 - **Osama Hasan** - DevOps & Deployment
 
-## 📞 Support
+## Support
 
 For issues, questions, or support:
 - **GitHub Issues**: [Create an issue](https://github.com/Hope0351/Clash-Code/issues)
 
-## ⭐ Acknowledgements
+## Acknowledgements
 
 - **MLH Hackathon** for the opportunity and platform
 - **Google Cloud** for AI and infrastructure services
@@ -362,8 +325,8 @@ For issues, questions, or support:
 **Gachena** - Detect, Protect, Control Your Digital Footprint
 
 [![GitHub stars](https://img.shields.io/github/stars/Hope0351/Clash-Code?style=social)](https://github.com/Hope0351/Clash-Code)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
-*Built with ❤️ during MLH Hackathon*
+*Built with heart during MLH Hackathon*
 
 </div>

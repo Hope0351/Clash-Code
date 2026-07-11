@@ -1,25 +1,65 @@
 import requests
-from langchain_google_vertexai import VertexAI
 import re
-from langchain_community.document_loaders import UnstructuredURLLoader
-import vertexai
-from vertexai.generative_models import GenerativeModel, GenerationConfig
-import google.auth
 import json
-import streamlit as st
-import random
-import pandas as pd
 import os
-from dotenv import load_dotenv
-from streamlit_auth import Authenticate
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from email.mime.text import MIMEText
+import sys
+import random
 import base64
-from datetime import datetime, timedelta
 import time
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+import streamlit as st
+import pandas as pd
+
+# --- Lazy imports for heavy/optional dependencies ---
+# These are only imported when actually needed (live mode), not in demo mode.
+
+def _import_vertexai():
+    import vertexai
+    return vertexai
+
+
+def _import_generative_model():
+    from vertexai.generative_models import GenerativeModel, GenerationConfig
+    return GenerativeModel, GenerationConfig
+
+
+def _import_langchain_vertexai():
+    from langchain_google_vertexai import VertexAI
+    return VertexAI
+
+
+def _import_unstructured_loader():
+    from langchain_community.document_loaders import UnstructuredURLLoader
+    return UnstructuredURLLoader
+
+
+def _import_google_auth():
+    import google.auth
+    return google.auth
+
+
+def _import_google_oauth():
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    return Credentials, Request
+
+
+def _import_google_api_client():
+    from googleapiclient.discovery import build
+    from googleapiclient.errors import HttpError
+    return build, HttpError
+
+
+def _import_mime():
+    from email.mime.text import MIMEText
+    return MIMEText
+
+
+def _import_authenticate():
+    from streamlit_auth import Authenticate
+    return Authenticate
 
 # Load environment variables from .env file if present
 load_dotenv()
@@ -47,15 +87,17 @@ def _init_vertex_ai():
     if _vertex_initialized:
         return
 
+    vertexai = _import_vertexai()
+    google_auth = _import_google_auth()
+
     if os.path.exists(SERVICE_ACCOUNT_PATH):
-        credentials, project_id = google.auth.load_credentials_from_file(SERVICE_ACCOUNT_PATH)
+        credentials, project_id = google_auth.load_credentials_from_file(SERVICE_ACCOUNT_PATH)
         vertexai.init(
             project=project_id or VERTEX_PROJECT,
             location=VERTEX_LOCATION,
             credentials=credentials
         )
     else:
-        # Fall back to Application Default Credentials (ADC)
         vertexai.init(project=VERTEX_PROJECT, location=VERTEX_LOCATION)
 
     _vertex_initialized = True
@@ -139,6 +181,7 @@ def extract_email(privacy_url):
     """
     try:
         url_list = [privacy_url]
+        UnstructuredURLLoader = _import_unstructured_loader()
         loader = UnstructuredURLLoader(urls=url_list)
         data = loader.load()
 
@@ -146,6 +189,7 @@ def extract_email(privacy_url):
             return "No email available"
 
         _init_vertex_ai()
+        VertexAI = _import_langchain_vertexai()
         model = VertexAI(model_name=GEMINI_MODEL, temperature=0)
 
         prompt = f"""
@@ -272,7 +316,6 @@ def compose_df(classification_data, email_info):
         print(f"Error composing dataframe row: {e}")
 
 
-@st.cache_data
 def display_random_logos(image_urls):
     """
     Display a grid of random logos with varying sizes in Streamlit.
@@ -310,7 +353,6 @@ def display_random_logos(image_urls):
                 st.markdown(img_html, unsafe_allow_html=True)
 
 
-@st.fragment
 def display_df(df):
     """
     Display an editable dataframe in Streamlit, allowing users to select and interact with company data.
@@ -344,7 +386,7 @@ def display_df(df):
         df,
         column_config=column_config,
         hide_index=True,
-        use_container_width=True,
+        width='stretch',
         column_order=['Select', 'Company Name', 'Interaction Type', 'Website', 'Select Option']
     )
 
@@ -353,7 +395,7 @@ def display_df(df):
     return selected_rows
 
 
-@st.dialog("Email Preview - Gachena")
+@st.dialog("Email Preview")
 def preview_email(email, subject, body, service):
     """
     Display a dialog in Streamlit for previewing and sending an email.
@@ -458,6 +500,8 @@ def google_authenticate():
     if not redirect.endswith('/'):
         redirect += '/'
 
+    Authenticate = _import_authenticate()
+
     authenticator = Authenticate(
         secret_credentials_path='credentials.json',
         cookie_name=COOKIE_NAME,
@@ -485,6 +529,9 @@ def build_gmail_service():
         raise ValueError("No OAuth credentials found. Please re-authenticate.")
 
     try:
+        Credentials, Request = _import_google_oauth()
+        build_func, HttpError = _import_google_api_client()
+
         credentials_info = json.loads(st.session_state["credentials"])
         credentials = Credentials.from_authorized_user_info(credentials_info)
 
@@ -493,7 +540,7 @@ def build_gmail_service():
             credentials.refresh(Request())
             st.session_state["credentials"] = credentials.to_json()
 
-        gmail_service = build('gmail', 'v1', credentials=credentials)
+        gmail_service = build_func('gmail', 'v1', credentials=credentials)
         return gmail_service
     except Exception as e:
         print(f"Error building Gmail service: {e}")
@@ -513,6 +560,7 @@ def create_message(sender, to, subject, message_text):
     Returns:
         dict: A dictionary containing the raw, base64-encoded message.
     """
+    MIMEText = _import_mime()
     message = MIMEText(message_text)
     message['to'] = to
     message['from'] = sender
@@ -535,6 +583,7 @@ def send_message(service, user_id, message):
         None: If an error occurred during sending.
     """
     try:
+        _, HttpError = _import_google_api_client()
         result = service.users().messages().send(userId=user_id, body=message).execute()
         print(f"Message sent. ID: {result['id']}")
         return result
@@ -565,6 +614,7 @@ def fetch_emails_by_label(service, label_id, days, num_emails=10):
     query = f'after:{start_date} before:{tomorrow} -label:CATEGORY_PERSONAL'
 
     try:
+        _, HttpError = _import_google_api_client()
         results = service.users().messages().list(
             userId='me',
             q=query,
@@ -761,6 +811,8 @@ def classify_email_with_gemini(email_content):
         },
         "required": ["company_name", "category", "website"]
     }
+
+    GenerativeModel, GenerationConfig = _import_generative_model()
 
     model = GenerativeModel(
         GEMINI_MODEL,
