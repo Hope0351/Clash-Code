@@ -1,0 +1,24 @@
+# Environment and secrets - NEVER commit these
+.env
+.env.*
+!.env.example
+credentials.json
+service_acc.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store

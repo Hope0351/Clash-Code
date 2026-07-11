@@ -2,7 +2,7 @@
 import json
 import os
 
-print("=== TRACECTRL FIX CHECK ===")
+print("=== GACHENA FIX CHECK ===")
 
 # 1. Check file
 if os.path.exists('credentials.json'):

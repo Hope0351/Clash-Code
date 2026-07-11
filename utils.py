@@ -10,22 +10,64 @@ import streamlit as st
 import random
 import pandas as pd
 import os
+from dotenv import load_dotenv
 from streamlit_auth import Authenticate
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from email.mime.text import MIMEText
 import base64
 from datetime import datetime, timedelta
 import time
 
+# Load environment variables from .env file if present
+load_dotenv()
 
-def get_first_working_url(json_data):
+# --- Configuration from Environment ---
+SERVICE_ACCOUNT_PATH = os.getenv('SERVICE_ACCOUNT_PATH', 'service_acc.json')
+COOKIE_KEY = os.getenv('COOKIE_KEY', os.getenv('COOKIE_SECRET', 'change_me_in_production'))
+COOKIE_NAME = os.getenv('COOKIE_NAME', 'gachena_auth')
+COOKIE_EXPIRY_DAYS = float(os.getenv('COOKIE_EXPIRY_DAYS', '30'))
+REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:8501/')
+MAX_GEMINI_RETRIES = int(os.getenv('MAX_GEMINI_RETRIES', '3'))
+GEMINI_RETRY_DELAY = int(os.getenv('GEMINI_RETRY_DELAY', '60'))
+VERTEX_PROJECT = os.getenv('VERTEX_PROJECT', '')
+VERTEX_LOCATION = os.getenv('VERTEX_LOCATION', 'us-central1')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash-001')
+LOGO_TIMEOUT = int(os.getenv('LOGO_TIMEOUT', '5'))
+
+# --- Vertex AI initialization (lazy) ---
+_vertex_initialized = False
+
+
+def _init_vertex_ai():
+    """Initialize Vertex AI once, using service account credentials."""
+    global _vertex_initialized
+    if _vertex_initialized:
+        return
+
+    if os.path.exists(SERVICE_ACCOUNT_PATH):
+        credentials, project_id = google.auth.load_credentials_from_file(SERVICE_ACCOUNT_PATH)
+        vertexai.init(
+            project=project_id or VERTEX_PROJECT,
+            location=VERTEX_LOCATION,
+            credentials=credentials
+        )
+    else:
+        # Fall back to Application Default Credentials (ADC)
+        vertexai.init(project=VERTEX_PROJECT, location=VERTEX_LOCATION)
+
+    _vertex_initialized = True
+
+
+def get_first_working_url(json_data, timeout=10):
     """
     Retrieve the first working URL from a list in a JSON response.
 
     Parameters:
         json_data (dict): JSON data containing a "success" status and a list of URLs under the "links" key.
+        timeout (int): HTTP request timeout in seconds.
 
     Returns:
         str: The first URL that returns a successful HTTP response (status code 200).
@@ -33,42 +75,44 @@ def get_first_working_url(json_data):
     Raises:
         ValueError: If the operation is unsuccessful, no URLs are provided, or no valid URL is found.
     """
-    # Check if "success" key exists and its value is True
     if not json_data.get('success', False):
-        raise ValueError("The operation was not successful")
+        raise ValueError("The FireCrawl operation was not successful")
 
-    # Check if "links" key exists and it has a list of URLs
     urls = json_data.get('links', [])
     if not urls:
-        raise ValueError("No URLs provided")
+        raise ValueError("No privacy URLs found by FireCrawl")
 
-    # Iterate through the list of URLs and check for a valid one
     for url in urls:
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=timeout, headers={'User-Agent': 'Gachena/1.0'})
             if response.status_code == 200:
                 return url
         except requests.exceptions.RequestException as e:
-            # Handle possible connection errors and skip to next URL
             print(f"Error checking {url}: {e}")
             continue
 
-    # If no valid URL is found, raise an error
-    raise ValueError("No valid URL found in the provided list")
+    raise ValueError("No valid privacy URL found in the provided list")
 
 
 def return_privacy_url(base_url):
     """
-     Query an API to retrieve URLs related to privacy information for a given website.
+    Query FireCrawl API to retrieve URLs related to privacy information for a given website.
 
-     Parameters:
-         base_url (str): The base URL of the website for which to retrieve privacy-related links.
+    Parameters:
+        base_url (str): The base URL of the website for which to retrieve privacy-related links.
 
-     Returns:
-         requests.Response: The API response object containing privacy URLs.
-     """
-    url = "https://api.firecrawl.dev/v1/map"
+    Returns:
+        requests.Response: The API response object containing privacy URLs.
 
+    Raises:
+        ValueError: If FIRECRAWL_API_KEY is not set.
+    """
+    firecrawl_key = os.getenv('FIRECRAWL_API_KEY')
+    if not firecrawl_key:
+        raise ValueError("FIRECRAWL_API_KEY environment variable is not set. "
+                         "Please set it in your .env file or deployment environment.")
+
+    api_url = "https://api.firecrawl.dev/v1/map"
     payload = {
         "url": base_url,
         "search": "privacy",
@@ -77,10 +121,10 @@ def return_privacy_url(base_url):
         "limit": 3
     }
     headers = {
-        f"Authorization": f"Bearer {os.getenv('FIRECRAWL_API_KEY')}",
+        "Authorization": f"Bearer {firecrawl_key}",
         "Content-Type": "application/json"
     }
-    return requests.request("POST", url, json=payload, headers=headers)
+    return requests.post(api_url, json=payload, headers=headers, timeout=30)
 
 
 def extract_email(privacy_url):
@@ -93,51 +137,58 @@ def extract_email(privacy_url):
     Returns:
         str: The extracted email address if found; otherwise, "No email available".
     """
-    url = [privacy_url]
-    loader = UnstructuredURLLoader(urls=url)
-    data = loader.load()
+    try:
+        url_list = [privacy_url]
+        loader = UnstructuredURLLoader(urls=url_list)
+        data = loader.load()
 
-    credentials, project_id = google.auth.load_credentials_from_file('service_acc.json')
-    vertexai.init(project=project_id, location="us-central1", credentials=credentials)
+        if not data or not data[0].page_content:
+            return "No email available"
 
-    model = VertexAI(model_name='gemini-1.5-flash-001', temperature=0)
+        _init_vertex_ai()
+        model = VertexAI(model_name=GEMINI_MODEL, temperature=0)
 
-    prompt = f"""
-    Based on the below text, what is the email for data privacy/GDPR contact?
-    Return only email address.
-    {data[0]}
-    """
-    response = model.invoke(prompt)
+        prompt = f"""
+        Based on the below text, what is the email for data privacy/GDPR contact?
+        Return only email address.
+        {data[0].page_content[:8000]}
+        """
+        response = model.invoke(prompt)
 
-    # make sure to return only valid email addresses
-    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
-
-    match = re.search(email_pattern, response)
-    if match:
-        return match.group(0)
-    else:
+        # Extract valid email from response
+        email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+        match = re.search(email_pattern, response)
+        if match:
+            return match.group(0)
+        else:
+            return "No email available"
+    except Exception as e:
+        print(f"Error extracting email from {privacy_url}: {e}")
         return "No email available"
 
 
-# function to check if url is working
-def check_url(url):
+def check_url(url, timeout=LOGO_TIMEOUT):
     """
     Check if a URL is accessible and returns a successful HTTP status.
 
     Parameters:
         url (str): The URL to check.
+        timeout (int): Request timeout in seconds.
 
     Returns:
         bool: True if the URL returns a 200 status code, False otherwise.
     """
     try:
-        response = requests.get(url)
+        response = requests.head(url, timeout=timeout, allow_redirects=True)
         return response.status_code == 200
-    except requests.exceptions.RequestException as e:
-        return False
+    except requests.exceptions.RequestException:
+        try:
+            response = requests.get(url, timeout=timeout, stream=True, headers={'User-Agent': 'Gachena/1.0'})
+            return response.status_code == 200
+        except requests.exceptions.RequestException:
+            return False
 
 
-# read json file and transform to dictionary
 def read_json(file_path):
     """
     Read a JSON file and return its contents as a dictionary.
@@ -159,22 +210,31 @@ def compose_logo_url(logo_url_set, email_info):
 
     Parameters:
         logo_url_set (set): A set to store valid logo URLs.
-        email_info (dict): Dictionary containing email interaction information, including a JSON-formatted "Interaction Type".
+        email_info (dict): Dictionary containing email interaction information.
 
     Returns:
         None
     """
-    classification = json.loads(email_info["Interaction Type"])
-    website = classification.get("website", "")
+    try:
+        classification = json.loads(email_info.get("Interaction Type", "{}"))
+        website = classification.get("website", "")
 
-    # Clean the website: remove 'https://www.' or 'http://www.' and any slashes
-    cleaned_website = re.sub(r'https?://(www\.)?', '', website).strip('/')
+        if not website:
+            return
 
-    logo_url = f"https://img.logo.dev/{cleaned_website}?token={os.getenv('LOGODEV_API_KEY')}"
+        # Clean the website URL
+        cleaned_website = re.sub(r'https?://(www\.)?', '', website).strip('/')
 
-    # Check if the URL is valid and add it to the set
-    if check_url(logo_url):
-        logo_url_set.add(logo_url)
+        logodev_key = os.getenv('LOGODEV_API_KEY', '')
+        if not logodev_key:
+            return
+
+        logo_url = f"https://img.logo.dev/{cleaned_website}?token={logodev_key}"
+
+        if check_url(logo_url):
+            logo_url_set.add(logo_url)
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error composing logo URL: {e}")
 
 
 def compose_df(classification_data, email_info):
@@ -183,27 +243,34 @@ def compose_df(classification_data, email_info):
 
     Parameters:
         classification_data (list): A list to store classification dictionaries with company details.
-        email_info (dict): Dictionary containing email interaction data, including a JSON-formatted "Interaction Type".
+        email_info (dict): Dictionary containing email interaction data.
 
     Returns:
         None
     """
-    interaction_str = email_info.get("Interaction Type", "{}")
+    try:
+        interaction_str = email_info.get("Interaction Type", email_info.get("Classification", "{}"))
 
-    # Parse the classification JSON string into a dictionary
-    interaction_dict = json.loads(interaction_str)
+        # Handle case where classification might already be a dict
+        if isinstance(interaction_str, dict):
+            interaction_dict = interaction_str
+        else:
+            interaction_dict = json.loads(interaction_str)
 
-    # Extract relevant fields (company name, category, website)
-    company_name = interaction_dict.get("company_name", "")
-    category = interaction_dict.get("category", "")
-    website = interaction_dict.get("website", "")
+        company_name = interaction_dict.get("company_name", "")
+        # Support both "category" and "interaction_type" keys from Gemini response
+        category = interaction_dict.get("category", interaction_dict.get("interaction_type", ""))
+        website = interaction_dict.get("website", "")
 
-    # Append the extracted data as a tuple (or list) to the classification_data list
-    classification_data.append({
-        "Company Name": company_name,
-        "Interaction Type": category,
-        "Website": website
-    })
+        if company_name:
+            classification_data.append({
+                "Company Name": company_name,
+                "Interaction Type": category,
+                "Website": website
+            })
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error composing dataframe row: {e}")
+
 
 @st.cache_data
 def display_random_logos(image_urls):
@@ -216,29 +283,31 @@ def display_random_logos(image_urls):
     Returns:
         None
     """
-    num_columns = 7  # Number of columns to display
-    random.shuffle(image_urls)  # Shuffle the images to randomize their order
+    if not image_urls:
+        return
 
-    # Generate random widths for each image (between 50px and 150px)
-    widths = [random.randint(30, 90) for _ in image_urls]
+    num_columns = 7
+    shuffled = image_urls.copy()
+    random.shuffle(shuffled)
 
-    # Iterate over the images and display them in columns
-    for i in range(0, len(image_urls), num_columns):
+    widths = [random.randint(30, 90) for _ in shuffled]
+
+    for i in range(0, len(shuffled), num_columns):
         cols = st.columns(num_columns)
-        for idx, img_url in enumerate(image_urls[i:i + num_columns]):
+        for idx, img_url in enumerate(shuffled[i:i + num_columns]):
             with cols[idx]:
                 width = widths[i + idx]
-                # Display the image with rounded corners and random width
-                html = f'''
-                    <img src="{img_url}" 
-                         style="border-radius:50%; 
-                                width:{width}px; 
-                                height:{width}px; 
+                img_html = f'''
+                    <img src="{img_url}"
+                         style="border-radius:50%;
+                                width:{width}px;
+                                height:{width}px;
                                 object-fit:contain;
                                 margin-bottom:10px;"
+                         alt="Company logo"
                     />
                 '''
-                st.markdown(html, unsafe_allow_html=True)
+                st.markdown(img_html, unsafe_allow_html=True)
 
 
 @st.fragment
@@ -247,29 +316,30 @@ def display_df(df):
     Display an editable dataframe in Streamlit, allowing users to select and interact with company data.
 
     Parameters:
-        df (pd.DataFrame): The dataframe containing company information, including "Company Name", "Interaction Type", and "Website" columns.
+        df (pd.DataFrame): The dataframe containing company information.
 
     Returns:
         pd.DataFrame: A subset of the dataframe with only the selected rows.
     """
-    # drop duplicate companies
-    df.drop_duplicates(subset=['Company Name'], inplace=True)
+    if df.empty:
+        st.info("No companies detected. Try scanning more emails or adjusting your filters.")
+        return pd.DataFrame()
 
-    # add columns to df_clean
+    # Drop duplicate companies
+    df = df.drop_duplicates(subset=['Company Name']).copy()
+
+    # Add interactive columns
     df['Select Option'] = '-'
     df['Select'] = False
 
-    # Create options for the dropdown
     dropdown_options = ['Request Data', 'Modify Data', 'Erase Data']
 
     column_config = {
-        'Select Option': st.column_config.SelectboxColumn(
-            options=dropdown_options),
+        'Select Option': st.column_config.SelectboxColumn(options=dropdown_options),
         'Website': st.column_config.LinkColumn(),
         'Select': st.column_config.CheckboxColumn(),
     }
 
-    # Display editable dataframe with dropdowns
     edited_df = st.data_editor(
         df,
         column_config=column_config,
@@ -278,13 +348,12 @@ def display_df(df):
         column_order=['Select', 'Company Name', 'Interaction Type', 'Website', 'Select Option']
     )
 
-    # keep only selected rows
     selected_rows = edited_df[edited_df['Select']]
     st.session_state['selected_rows'] = selected_rows
     return selected_rows
 
 
-@st.dialog("Email Preview")
+@st.dialog("Email Preview - Gachena")
 def preview_email(email, subject, body, service):
     """
     Display a dialog in Streamlit for previewing and sending an email.
@@ -293,27 +362,27 @@ def preview_email(email, subject, body, service):
         email (str): The recipient's email address.
         subject (str): The subject of the email.
         body (str): The body content of the email.
-        service (googleapiclient.discovery.Resource): The Google API service instance used to send the email.
+        service (googleapiclient.discovery.Resource): The Gmail API service instance.
 
     Returns:
         None
     """
-    st.text_input("To", email)
-    st.text_input("Subject", subject)
+    st.text_input("To", email, disabled=True)
+    st.text_input("Subject", subject, disabled=True)
     st.text_area(label="Body", value=body, label_visibility='hidden', height=300)
 
     st.write('')
 
-    send_button = st.button("Send")
+    send_button = st.button("Send Email", type="primary")
 
     if send_button:
-        # compose email
-        message = create_message(st.session_state['user_info'].get('email'), email, subject, body)
-
-        # Send the email
-        send_message(service, 'me', message)
-        # Show success message
-        st.success("Email sent successfully!")
+        sender_email = st.session_state['user_info'].get('email')
+        message = create_message(sender_email, email, subject, body)
+        result = send_message(service, 'me', message)
+        if result:
+            st.success("Email sent successfully!")
+        else:
+            st.error("Failed to send email. Check the logs for details.")
 
 
 def get_email_template():
@@ -321,8 +390,7 @@ def get_email_template():
     Retrieve predefined email templates for different types of GDPR requests.
 
     Returns:
-        dict: A dictionary with GDPR request types ("Request Data", "Modify Data", "Erase Data") as keys and
-              their corresponding email subject and body as values.
+        dict: A dictionary with GDPR request types as keys and their corresponding email subject and body.
     """
     email_template = {
         "Request Data": {
@@ -385,11 +453,17 @@ def google_authenticate():
     Returns:
         Authenticate: An authentication object with session management.
     """
+    redirect = os.getenv('GOOGLE_REDIRECT_URI', REDIRECT_URI)
+    # Ensure trailing slash consistency
+    if not redirect.endswith('/'):
+        redirect += '/'
+
     authenticator = Authenticate(
         secret_credentials_path='credentials.json',
-        cookie_name='my_cookie_name',
-        cookie_key='this_is_secret',
-        redirect_uri='http://localhost:8501/',
+        cookie_name=COOKIE_NAME,
+        cookie_key=COOKIE_KEY,
+        cookie_expiry_days=COOKIE_EXPIRY_DAYS,
+        redirect_uri=redirect,
     )
 
     # Catch the login event
@@ -403,20 +477,27 @@ def build_gmail_service():
 
     Returns:
         googleapiclient.discovery.Resource: The Gmail API service instance.
+
+    Raises:
+        ValueError: If credentials are not found in session state.
     """
-    if "credentials" in st.session_state:
+    if "credentials" not in st.session_state:
+        raise ValueError("No OAuth credentials found. Please re-authenticate.")
+
+    try:
         credentials_info = json.loads(st.session_state["credentials"])
         credentials = Credentials.from_authorized_user_info(credentials_info)
 
-        # Refresh the token if it's expired
+        # Refresh the token if expired
         if credentials.expired and credentials.refresh_token:
             credentials.refresh(Request())
-            # Update the stored credentials
             st.session_state["credentials"] = credentials.to_json()
 
-        # Build the Gmail service
         gmail_service = build('gmail', 'v1', credentials=credentials)
         return gmail_service
+    except Exception as e:
+        print(f"Error building Gmail service: {e}")
+        raise
 
 
 def create_message(sender, to, subject, message_text):
@@ -432,7 +513,6 @@ def create_message(sender, to, subject, message_text):
     Returns:
         dict: A dictionary containing the raw, base64-encoded message.
     """
-
     message = MIMEText(message_text)
     message['to'] = to
     message['from'] = sender
@@ -447,19 +527,22 @@ def send_message(service, user_id, message):
 
     Parameters:
         service (googleapiclient.discovery.Resource): The Gmail API service instance.
-        user_id (str): The sender's user ID, typically "me" to indicate the authenticated user.
+        user_id (str): The sender's user ID, typically "me".
         message (dict): The email message created by `create_message`.
 
     Returns:
-        dict: The response from the Gmail API containing message details if successful.
+        dict: The response from the Gmail API if successful.
         None: If an error occurred during sending.
     """
     try:
-        message = service.users().messages().send(userId=user_id, body=message).execute()
-        print(f"Message Id: {message['id']}")
-        return message
+        result = service.users().messages().send(userId=user_id, body=message).execute()
+        print(f"Message sent. ID: {result['id']}")
+        return result
+    except HttpError as e:
+        print(f"Gmail API error sending message: {e}")
+        return None
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Unexpected error sending message: {e}")
         return None
 
 
@@ -468,51 +551,67 @@ def fetch_emails_by_label(service, label_id, days, num_emails=10):
     Fetch emails from a specified category within a given date range.
 
     Parameters:
-        service (googleapiclient.discovery.Resource): The Gmail API service instance.
-        label_id (str): The Gmail label ID to filter emails by category (e.g., 'CATEGORY_PROMOTIONS').
-        days (int): The number of past days to include in the date range.
-        num_emails (int, optional): The maximum number of emails to fetch. Defaults to 10.
+        service: The Gmail API service instance.
+        label_id (str): The Gmail label ID to filter by (e.g., 'CATEGORY_PROMOTIONS').
+        days (int): The number of past days to include.
+        num_emails (int): Maximum number of emails to fetch. Defaults to 10.
 
     Returns:
-        list: A list of email messages that match the specified category and date range.
+        list: A list of email message dicts.
     """
-
-    # Calculate the start date (n days ago) and the end date (tomorrow)
     start_date = (datetime.now() - timedelta(days=days - 1)).strftime('%Y/%m/%d')
     tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y/%m/%d')
 
-    # Compose query and exclude emails from personal category
     query = f'after:{start_date} before:{tomorrow} -label:CATEGORY_PERSONAL'
 
-    # Fetch emails from the specified label and date range
-    results = service.users().messages().list(
-        userId='me',
-        q=query,
-        maxResults=num_emails,
-        labelIds=[label_id]  # Fetch emails for a single category
-    ).execute()
+    try:
+        results = service.users().messages().list(
+            userId='me',
+            q=query,
+            maxResults=num_emails,
+            labelIds=[label_id]
+        ).execute()
 
-    messages = results.get('messages', [])
-    return messages
+        return results.get('messages', [])
+    except HttpError as e:
+        print(f"Error fetching emails for label {label_id}: {e}")
+        return []
 
 
-
-def fetch_emails(service, days, num_emails=10):
+def fetch_emails(service, days, ignored_categories=None, num_emails=10):
     """
     Fetch emails from multiple categories within a specified date range.
 
     Parameters:
-        service (googleapiclient.discovery.Resource): The Gmail API service instance.
-        days (int): The number of past days to include in the date range.
-        num_emails (int, optional): The maximum number of emails to fetch from each category. Defaults to 10.
+        service: The Gmail API service instance.
+        days (int): The number of past days to include.
+        ignored_categories (list of str): Categories to skip (e.g., ['Promotions', 'Social']).
+        num_emails (int): Maximum emails per category. Defaults to 10.
 
     Returns:
-        list: A combined list of email messages from multiple categories within the specified date range.
+        list: Combined list of email messages.
     """
-    # Categories to fetch from
+    # Map user-friendly category names to Gmail label IDs
+    category_map = {
+        'Promotions': 'CATEGORY_PROMOTIONS',
+        'Updates': 'CATEGORY_UPDATES',
+        'Social': 'CATEGORY_SOCIAL',
+        'Forums': 'CATEGORY_FORUMS',
+    }
+
     categories = ['CATEGORY_PROMOTIONS', 'CATEGORY_UPDATES']
 
-    # Fetch emails from each category separately and combine them
+    # Filter out ignored categories
+    if ignored_categories:
+        for cat_name in ignored_categories:
+            label_id = category_map.get(cat_name)
+            if label_id and label_id in categories:
+                categories.remove(label_id)
+
+    if not categories:
+        print("All categories were filtered out. No emails to fetch.")
+        return []
+
     combined_emails = []
     for category in categories:
         print(f"Fetching emails from {category} for the last {days} day(s)...")
@@ -524,188 +623,200 @@ def fetch_emails(service, days, num_emails=10):
 
 def get_email_content(service, message_id):
     """
-        Retrieve the content, subject, sender, and date of a specified email message.
+    Retrieve the content, subject, sender, and date of a specified email message.
 
-        Parameters:
-            service (googleapiclient.discovery.Resource): The Gmail API service instance.
-            message_id (str): The ID of the email message to retrieve.
+    Parameters:
+        service: The Gmail API service instance.
+        message_id (str): The ID of the email message.
 
-        Returns:
-            tuple: A tuple containing:
-                - subject (str or None): The subject of the email.
-                - sender (str or None): The sender's email address.
-                - date (str or None): The date the email was sent, formatted as "YYYY-MM-DD".
-                - email_content (str or None): The decoded plain text content of the email.
-
-        Raises:
-            ValueError: If no content is found in the email.
-        """
+    Returns:
+        tuple: (subject, sender, date, email_content) or (None, None, None, None) on failure.
+    """
     try:
-        message = service.users().messages().get(userId='me', id=message_id).execute()
+        message = service.users().messages().get(userId='me', id=message_id, format='full').execute()
         payload = message.get('payload', {})
         headers = payload.get('headers', [])
         data = ''
 
-        # Extract subject, sender, and date
         subject = None
         sender = None
         date = None
 
-        # Loop through headers to extract subject, sender, and date
         for header in headers:
             if header['name'] == 'Subject':
                 subject = header['value']
             if header['name'] == 'From':
                 sender = header['value']
             if header['name'] == 'Date':
-                # Example date format: "Thu, 7 Oct 2021 14:58:33 +0000"
                 date_str = header['value']
-                # Try to parse the date and format it as YYYY-MM-DD
                 try:
                     parsed_date = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
-                    date = parsed_date.strftime("%Y-%m-%d")  # Only return the date part
+                    date = parsed_date.strftime("%Y-%m-%d")
                 except ValueError:
-                    # Fallback to raw date string if parsing fails
                     date = date_str
 
-        # Extract content of the email (only plain text for simplicity)
-        if 'parts' in payload:
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/plain':
-                    data = part['body']['data']
-                    break
-        elif 'body' in payload:
-            data = payload['body']['data']
+        # Try to extract content - plain text first, then HTML fallback
+        email_content = _extract_body(payload)
 
-        # Decode email content
-        if data:
-            email_content = base64.urlsafe_b64decode(data.encode('ASCII')).decode('utf-8')
+        if email_content:
             return subject, sender, date, email_content
         else:
-            raise ValueError("No content found in the email.")
+            print(f"No content found in email {message_id}")
+            return None, None, None, None
 
     except Exception as e:
         print(f"Error retrieving email {message_id}: {e}")
         return None, None, None, None
 
 
+def _extract_body(payload):
+    """
+    Recursively extract email body content from a Gmail message payload.
+    Tries plain text first, falls back to stripping HTML.
+
+    Parameters:
+        payload (dict): The Gmail message payload.
+
+    Returns:
+        str or None: The extracted text content.
+    """
+    if not payload:
+        return None
+
+    # If the payload has parts (multipart), iterate through them
+    if 'parts' in payload:
+        for part in payload['parts']:
+            content = _extract_body(part)
+            if content:
+                return content
+        return None
+
+    # Leaf node - check mimeType and get data
+    mime_type = payload.get('mimeType', '')
+
+    if mime_type == 'text/plain':
+        data = payload.get('body', {}).get('data')
+        if data:
+            return base64.urlsafe_b64decode(data.encode('ASCII')).decode('utf-8', errors='replace')
+
+    elif mime_type == 'text/html' and 'parts' not in payload:
+        data = payload.get('body', {}).get('data')
+        if data:
+            html_content = base64.urlsafe_b64decode(data.encode('ASCII')).decode('utf-8', errors='replace')
+            # Strip HTML tags to get plain text
+            text = re.sub(r'<[^>]+>', ' ', html_content)
+            text = re.sub(r'\s+', ' ', text).strip()
+            if len(text) > 50:  # Only return if meaningful content
+                return text
+
+    return None
+
+
 def classify_email_with_gemini(email_content):
     """
-    Classify an email into interacted or not interacted categories and extract relevant company information.
+    Classify an email and extract company information using Gemini AI.
 
     Parameters:
         email_content (str): The text content of the email to classify.
 
     Returns:
-        dict: A JSON object containing:
-            - company_name (str): The name of the company inferred from the email content.
-            - interaction_type (str): The classification of the email as either 'interacted' or 'not interacted'.
-            - website (str): The inferred website of the company, if available.
-
-    Description:
-        This function uses the Gemini AI model to classify emails based on user engagement and interaction.
-        Emails are categorized into 'interacted' (triggered by a user action) or 'not interacted' (not user-triggered, e.g., marketing).
-        Additionally, the function attempts to infer the company name and website from the email content, if they are not explicitly stated.
+        str: A JSON string containing company_name, category/interaction_type, and website.
 
     Raises:
-        Exception: If there is an issue with the classification or model response.
+        Exception: If classification fails after retries.
     """
+    _init_vertex_ai()
 
     SYSTEM_INSTRUCTIONS = """
     You are a helpful AI that helps classify emails and extract relevant information.
 
     All emails are classified into one of the following categories: interacted, not interacted.
-    Interacted emails are triggered directly by a user’s action. 
-    They are functional and usually contain important information, such as confirmations (order confirmations, 
+    Interacted emails are triggered directly by a user's action.
+    They are functional and usually contain important information, such as confirmations (order confirmations,
     password resets, account creation), notifications about transactions, or updates on user-initiated requests.
 
-    Not interacted emails are not triggered by any specific user action. They are often used to keep users engaged, 
+    Not interacted emails are not triggered by any specific user action. They are often used to keep users engaged,
     provide updates, send offers, or remind users of products/services. Examples include newsletters, promotional emails, and other marketing content.
     """
+
+    # Truncate very long emails to save tokens
+    truncated_content = email_content[:6000] if len(email_content) > 6000 else email_content
 
     PROMPT = f"""
     Based on the following email content, identify the following:
     1. The name of the company (if not mentioned explicitly, infer from the context).
-    2. Classify the email into one of the following categories: interacted, not interacted. 
+    2. Classify the email into one of the following categories: interacted, not interacted.
     3. Company website (if not mentioned explicitly, infer from the context).
 
     Email content:
-    {email_content}
+    {truncated_content}
     """
 
     response_schema = {
         "type": "OBJECT",
         "properties": {
             "company_name": {"type": "STRING"},
-            "interaction_type": {"type": "STRING", "enum": ["interacted", "not interacted"]},
+            "category": {"type": "STRING", "enum": ["interacted", "not interacted"]},
             "website": {"type": "STRING"}
-        }, "required": ["company_name", "category", "website"]
+        },
+        "required": ["company_name", "category", "website"]
     }
 
-    credentials, project_id = google.auth.load_credentials_from_file('service_acc.json')
-
-    vertexai.init(project=project_id, location="us-central1", credentials=credentials)
-    model = GenerativeModel("gemini-1.5-flash-001",
-                            system_instruction=SYSTEM_INSTRUCTIONS)
+    model = GenerativeModel(
+        GEMINI_MODEL,
+        system_instruction=SYSTEM_INSTRUCTIONS
+    )
 
     response = model.generate_content(
         [PROMPT],
-        generation_config=GenerationConfig(response_mime_type="application/json", response_schema=response_schema)
+        generation_config=GenerationConfig(
+            response_mime_type="application/json",
+            response_schema=response_schema
+        )
     )
 
     return response.text
 
 
-def process_emails(service, days, ignored_categories):
+def process_emails(service, days, ignored_categories=None, max_emails=10):
     """
-    Process emails by fetching, analyzing, and classifying them into interacted or not interacted categories.
+    Process emails by fetching, analyzing, and classifying them.
 
     Parameters:
-        service (googleapiclient.discovery.Resource): The Gmail API service object for accessing the user's emails.
-        days (int): The number of days from which to fetch and process emails.
-        ignored_categories (list of str): A list of email categories to ignore during processing.
+        service: The Gmail API service object.
+        days (int): The number of days from which to fetch emails.
+        ignored_categories (list of str): Categories to ignore during processing.
+        max_emails (int): Maximum emails to fetch per category.
 
     Returns:
-        dict: A dictionary where each key is an email's message ID, and each value is a dictionary containing:
-            - "Subject" (str): The email's subject line.
-            - "Sender" (str): The sender's email address.
-            - "Date" (str): The date of the email.
-            - "Classification" (dict): The classification result from Gemini, including company name, interaction type, and website.
-
-    Description:
-        This function retrieves emails for a specified time range, extracts content, and uses Gemini AI to classify each email.
-        It updates the UI with a progress bar during processing and implements retry logic for rate limiting.
-        Emails with missing content or sender information are skipped, and any ignored categories are not processed.
-
-    Raises:
-        Exception: For rate-limit errors (429), the function pauses and retries after 60 seconds.
-                   Other exceptions are logged, and processing for the email in question is skipped.
+        dict: A dictionary of processed email data keyed by message ID.
     """
-
-    st.session_state['progress_bar'] = st.progress(0, text="Fetching emails...")
-    messages = fetch_emails(service, days)
+    progress_bar = st.progress(0, text="Fetching emails...")
+    messages = fetch_emails(service, days, ignored_categories=ignored_categories, num_emails=max_emails)
 
     if not messages:
-        # print("No emails found.")
+        progress_bar.empty()
+        st.warning("No emails found for the selected date range and categories.")
         return {}
 
     email_data = {}
+    total = len(messages)
 
-    # print(f"Processing {len(messages)} emails...")
-    st.session_state['progress_bar'].progress(25, text="Analyzing email content...")
+    progress_bar.progress(25, text=f"Analyzing {total} emails with AI...")
 
-    for msg in messages:
+    for idx, msg in enumerate(messages):
         message_id = msg['id']
         subject, sender, date, email_content = get_email_content(service, message_id)
 
         if email_content is None or sender is None:
-            # print(f"Skipping email {message_id} due to missing content or sender.")
             continue
 
-        # Retry mechanism for the Gemini call in case of rate limiting (429 Resource Exhausted)
-        while True:
+        # Retry mechanism with max retry cap
+        retries = 0
+        processed = False
+
+        while retries < MAX_GEMINI_RETRIES and not processed:
             try:
-                # Use Gemini to classify and extract information
                 gemini_result = classify_email_with_gemini(email_content)
 
                 if gemini_result:
@@ -713,26 +824,35 @@ def process_emails(service, days, ignored_categories):
                         "Subject": subject,
                         "Sender": sender,
                         "Date": date,
-                        "Classification": gemini_result
+                        "Interaction Type": gemini_result
                     }
-                    print(f"Successfully processed email {message_id}.")
-                else:
-                    print(f"Skipping email {message_id} due to failed Gemini classification.")
-                break  # Exit the while loop if processing succeeds
+                    print(f"Processed email {message_id} ({idx + 1}/{total}).")
+                processed = True
 
             except Exception as e:
-                if '429' in str(e) or 'Quota exceeded' in str(e):
-                    print(f"Rate limit hit (429 Quota exceeded). Waiting for 60 seconds...")
-                    time.sleep(60)  # Wait for 60 seconds before retrying
+                error_str = str(e)
+                if '429' in error_str or 'Quota exceeded' in error_str or 'RESOURCE_EXHAUSTED' in error_str:
+                    retries += 1
+                    if retries < MAX_GEMINI_RETRIES:
+                        wait_time = GEMINI_RETRY_DELAY * retries  # Exponential backoff
+                        print(f"Rate limit hit. Retry {retries}/{MAX_GEMINI_RETRIES}. Waiting {wait_time}s...")
+                        progress_bar.progress(
+                            25 + int(70 * idx / total),
+                            text=f"Rate limited. Waiting {wait_time}s before retry..."
+                        )
+                        time.sleep(wait_time)
+                    else:
+                        print(f"Max retries ({MAX_GEMINI_RETRIES}) exceeded for email {message_id}. Skipping.")
                 else:
-                    print(f"Skipping email {message_id} due to unexpected error: {e}")
-                    break  # Exit the while loop if another exception occurs
+                    print(f"Skipping email {message_id} due to error: {e}")
+                    processed = True  # Don't retry non-rate-limit errors
 
-    st.session_state['progress_bar'].progress(99, text="Finishing...")
+        # Update progress
+        progress_pct = 25 + int(70 * (idx + 1) / total)
+        progress_bar.progress(min(progress_pct, 95), text=f"Processed {idx + 1}/{total} emails...")
 
-    # get rid of progress bar
-    st.session_state['progress_bar'].empty()
-
-    st.write(email_data)
+    progress_bar.progress(100, text="Scan complete!")
+    time.sleep(0.5)
+    progress_bar.empty()
 
     return email_data

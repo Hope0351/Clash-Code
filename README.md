@@ -1,23 +1,23 @@
 ![Gachena Banner](https://github.com/user-attachments/assets/8861659d-57db-481a-bb38-dc1edfb47d59)
-# 👣 [GACHENA](https://youtu.be/JzglW8pOG2s) - MLH Hackathon  
+# 👣 [GACHENA](https://youtu.be/JzglW8pOG2s) - MLH Hackathon
 **Detect · Protect · Control Your Digital Footprint**
 
 ## 🎥 Demo & Resources
 
 ### **Live Demo**
-- **Application**: [https://gachena-app.com](https://clash-code.onrender.com/) 
+- **Application**: [https://gachena-app.com](https://gachena-app.com/)
 - **Demo Video**: [Watch on YouTube](https://youtu.be/JzglW8pOG2s)
 
 ### **Presentation Materials**
-- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit) 
-- **API Documentation**: [MLH Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/) 
+- **Pitch Deck**: [CANVA](https://www.canva.com/design/DAG-A8hVKxA/bbe7FO5dtep7RjiMZYB6oQ/edit)
+- **API Documentation**: [MLH Collection](https://gemini-hackathon-hub-614365371127.us-west1.run.app/)
 
 
 **Gachena** is an innovative web application that empowers users to take control of their personal data by automating GDPR compliance requests. Connect your Gmail, scan your digital footprint, and send automated data privacy requests to companies holding your information.
 
 ## 🏗️ Architecture
 
-![System Architecture](https://i.postimg.cc/zDVpcTk7/tracectrl-architecture.png)
+![System Architecture](https://i.postimg.cc/zDVpcTk7/gachena-architecture.png)
 
 ## ✨ Features
 
@@ -60,14 +60,14 @@
 
 ### **Authentication & Security**
 - **Google OAuth 2.0**: Secure user authentication
-- **JWT Tokens**: Session management and security
+- **JWT Tokens**: Session management and security (configurable secret key)
 - **Cookie-based Auth**: Persistent user sessions
 
 ### **Deployment & DevOps**
-- **Docker**: Containerized application packaging
+- **Docker**: Containerized application (non-root user)
 - **Google Container Registry**: Image storage and management
 - **Google Cloud Run**: Serverless deployment platform
-- **Environment Variables**: Secure configuration management
+- **Environment Variables**: Secure configuration management via `.env`
 
 ## 🚀 Quick Start
 
@@ -77,6 +77,7 @@
 - Gemini API access (Vertex AI)
 - FireCrawl API key
 - Logo.dev API key
+- A Google OAuth 2.0 client (download as `credentials.json`)
 
 ### **Installation**
 
@@ -92,27 +93,36 @@ pip install -r requirements.txt
 ```
 
 3. **Configure environment variables**
-Create a `.env` file with:
 ```bash
-# Google OAuth Credentials
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=http://localhost:8501
+# Copy the example env file
+cp .env.example .env
+# Then edit .env with your actual keys
+```
+
+Your `.env` file should look like:
+```bash
+# Google OAuth (credentials.json still needed for OAuth flow)
+GOOGLE_REDIRECT_URI=http://localhost:8501/
 
 # API Keys
 FIRECRAWL_API_KEY=your_firecrawl_key
 LOGODEV_API_KEY=your_logodev_key
-GEMINI_API_KEY=your_gemini_key
 
-# Gmail Configuration
-GMAIL_SCOPES=gmail.readonly,gmail.send
+# Vertex AI
+SERVICE_ACCOUNT_PATH=service_acc.json
+VERTEX_PROJECT=your-gcp-project-id
+VERTEX_LOCATION=us-central1
+
+# Security - CHANGE THIS IN PRODUCTION!
+COOKIE_KEY=your_random_secret_string_here
 ```
 
 4. **Set up Google OAuth**
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
    - Create OAuth 2.0 credentials
    - Add `http://localhost:8501` to authorized redirect URIs
-   - Download `credentials.json` to project root
+   - Download OAuth credentials as `credentials.json` to project root
+   - Download Vertex AI service account key as `service_acc.json` to project root
 
 5. **Run the application**
 ```bash
@@ -131,6 +141,7 @@ Open your browser and navigate to `http://localhost:8501`
 
 ### **Step 2: Scan Your Inbox**
 - Click "Scan Inbox" to analyze recent emails
+- Toggle **Demo Mode** to use pre-loaded sample data (no API calls)
 - Adjust date range and filters in "Advanced Options"
 - View detected companies with logos and categories
 
@@ -141,8 +152,8 @@ Open your browser and navigate to `http://localhost:8501`
 
 ### **Step 4: Send Requests**
 - Click "Run Bot" to process selections
-- Preview emails before sending
-- Choose bulk send for multiple companies
+- Enable "Preview Email" to review before sending (single selection)
+- Disable preview for bulk send to multiple companies
 - Track success notifications for each sent request
 
 ## 🔧 Configuration
@@ -158,22 +169,20 @@ Open your browser and navigate to `http://localhost:8501`
 
 ### **Environment Variables**
 
-Create a `.env` file in the root directory:
-```bash
-# Required for authentication
-GOOGLE_CLIENT_ID=your_client_id_here
-GOOGLE_CLIENT_SECRET=your_client_secret_here
+See [`.env.example`](.env.example) for the full list of configurable options:
 
-# Required for external services
-FIRECRAWL_API_KEY=your_firecrawl_api_key
-LOGODEV_API_KEY=your_logodev_api_key
-GEMINI_API_KEY=your_gemini_api_key
-
-# Optional: Customize app behavior
-SESSION_TIMEOUT=3600
-MAX_EMAILS_SCAN=1000
-DEFAULT_DATE_RANGE=7
-```
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `FIRECRAWL_API_KEY` | Yes | - | FireCrawl API key |
+| `LOGODEV_API_KEY` | Yes | - | Logo.dev API key |
+| `SERVICE_ACCOUNT_PATH` | Yes | `service_acc.json` | Path to Vertex AI service account JSON |
+| `VERTEX_PROJECT` | Yes | - | Your GCP project ID |
+| `COOKIE_KEY` | Yes | - | JWT signing secret (use a strong random string) |
+| `GOOGLE_REDIRECT_URI` | No | `http://localhost:8501/` | OAuth redirect URI |
+| `GEMINI_MODEL` | No | `gemini-1.5-flash-001` | Vertex AI model name |
+| `MAX_GEMINI_RETRIES` | No | `3` | Max retries on rate limit (429) |
+| `GEMINI_RETRY_DELAY` | No | `60` | Base delay in seconds between retries |
+| `COOKIE_EXPIRY_DAYS` | No | `30` | Days until auth cookie expires |
 
 ## 🐳 Docker Deployment
 
@@ -185,9 +194,12 @@ docker build -t gachena-app .
 ### **Run Container**
 ```bash
 docker run -p 8501:8501 \
-  -e GOOGLE_CLIENT_ID=your_id \
-  -e GOOGLE_CLIENT_SECRET=your_secret \
+  -v $(pwd)/credentials.json:/app/credentials.json:ro \
+  -v $(pwd)/service_acc.json:/app/service_acc.json:ro \
   -e FIRECRAWL_API_KEY=your_key \
+  -e LOGODEV_API_KEY=your_key \
+  -e VERTEX_PROJECT=your-project \
+  -e COOKIE_KEY=your_random_secret \
   gachena-app
 ```
 
@@ -198,12 +210,15 @@ services:
   gachena:
     build: .
     ports:
-      - "8501:8501"
+      - "8501:8080"
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+      - ./service_acc.json:/app/service_acc.json:ro
     environment:
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
       - LOGODEV_API_KEY=${LOGODEV_API_KEY}
+      - VERTEX_PROJECT=${VERTEX_PROJECT}
+      - COOKIE_KEY=${COOKIE_KEY}
     restart: unless-stopped
 ```
 
@@ -220,7 +235,7 @@ gcloud run deploy gachena \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLIENT_ID=$CLIENT_ID,GOOGLE_CLIENT_SECRET=$CLIENT_SECRET"
+  --set-env-vars="FIRECRAWL_API_KEY=$FIRECRAWL_KEY,VERTEX_PROJECT=$PROJECT_ID,COOKIE_KEY=$SECRET"
 ```
 
 ## 📁 Project Structure
@@ -228,15 +243,19 @@ gcloud run deploy gachena \
 ```
 Clash-Code/
 ├── app.py                 # Main Streamlit application
-├── requirements.txt       # Python dependencies
-├── Dockerfile            # Container configuration
-├── credentials.json      # Google OAuth credentials
-├── utils.py              # Utility functions and helpers
-├── streamlit_auth.py     # Authentication module
-├── streamlit_auth_cookie.py # Cookie management
-├── gemini_processed_emails.json # Sample email data
-├── index.html            # Landing page HTML
-└── diagnostic.py         # Debug and testing utilities
+├── utils.py               # Core business logic, AI, Gmail API
+├── streamlit_auth.py      # Google OAuth authentication module
+├── streamlit_auth_cookie.py # JWT cookie session management
+├── requirements.txt       # Pinned Python dependencies
+├── Dockerfile             # Container config (non-root user)
+├── .dockerignore          # Docker build exclusions
+├── .gitignore             # Git exclusions (secrets)
+├── .env.example           # Environment variable template
+├── index.html             # Landing page (particles.js animation)
+├── diagnostic.py          # OAuth setup debug utility
+├── gemini_processed_emails.json # Sample email data for demo mode
+├── LICENSE                # MIT License
+└── README.md              # This file
 ```
 
 ## 🧪 Testing
@@ -267,6 +286,7 @@ curl -X POST https://api.firecrawl.dev/v1/scrape \
 - **End-to-End Encryption**: All API communications use HTTPS
 - **Minimal Permissions**: Only requested Gmail scopes are accessed
 - **Session Isolation**: User data is never shared between sessions
+- **Configurable Secrets**: All sensitive keys loaded from environment variables
 
 ### **Compliance**
 - **GDPR Compliant**: Helps users exercise GDPR rights
@@ -297,7 +317,7 @@ git push origin feature/amazing-feature
 
 **Gachena** was developed by a team of three during the MLH Hackathon:
 - **Abdi Megersa** - Backend & AI Integration
-- **Eba Alemu** - Frontend & UI Design  
+- **Eba Alemu** - Frontend & UI Design
 - **Osama Hasan** - DevOps & Deployment
 
 ## 📞 Support
@@ -311,13 +331,13 @@ For issues, questions, or support:
 - **Google Cloud** for AI and infrastructure services
 - **Streamlit** for the amazing framework
 - **FireCrawl & Logo.dev** for their APIs
-- **All open-source contributors** whose work made this possible
+- All open-source contributors whose work made this possible
 
 ---
 
 <div align="center">
-  
-**Gachena** • **Detect • Protect • Control**
+
+**Gachena** - Detect, Protect, Control Your Digital Footprint
 
 [![GitHub stars](https://img.shields.io/github/stars/Hope0351/Clash-Code?style=social)](https://github.com/Hope0351/Clash-Code)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -325,5 +345,3 @@ For issues, questions, or support:
 *Built with ❤️ during MLH Hackathon*
 
 </div>
-
----
