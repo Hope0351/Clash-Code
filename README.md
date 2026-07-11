@@ -15,6 +15,28 @@
 
 **Gachena** is an innovative web application that empowers users to take control of their personal data by automating GDPR compliance requests. Connect your Gmail, scan your digital footprint, and send automated data privacy requests to companies holding your information.
 
+## 📸 Screenshots
+
+### Landing Page
+The welcome screen with an interactive particle animation greets users before they sign in.
+
+![Landing Page](docs/screenshots/01_landing_page.png)
+
+### Dashboard
+After signing in with Google, the main dashboard provides step-by-step instructions and quick access to scanning controls.
+
+![Dashboard](docs/screenshots/03_dashboard.png)
+
+### Company Data Table
+Detected companies are displayed in an interactive table where users can select which companies to send GDPR requests to, and choose the request type (Access, Modify, or Erase).
+
+![Data Table](docs/screenshots/05_data_table_and_bot.png)
+
+### Sidebar Navigation
+The sidebar shows user profile information and provides quick access to log out.
+
+![Sidebar](docs/screenshots/06_sidebar.png)
+
 ## 🏗️ Architecture
 
 ![System Architecture](https://i.postimg.cc/zDVpcTk7/gachena-architecture.png)
