@@ -3,28 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Particles.js</title>
+  <title>GACHENA — GDPR Compliance Shield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body, html {
-      margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
+      background: #0F172A;
     }
 
+    /* Particle canvas */
     #particles-js {
       position: fixed;
       width: 100vw;
       height: 100vh;
       top: 0;
       left: 0;
-      z-index: -1; /* Send the animation to the back */
+      z-index: 0;
     }
 
+    /* Main content */
     .content {
       position: relative;
       z-index: 1;
@@ -35,179 +38,226 @@
       align-items: center;
       height: 100vh;
       text-align: center;
+      padding: 0 24px;
     }
 
-    h1 {
-      font-size: 3em;
-      margin-bottom: 20px;
+    /* Shield icon */
+    .shield-icon {
+      font-size: 4.5em;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 30px rgba(13, 148, 136, 0.5));
+      animation: float 3s ease-in-out infinite;
     }
 
-    h2 {
-      font-size: 1.5em;
-      margin-bottom: 50px;
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Brand name */
+    .brand {
+      font-size: 3.8em;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #2DD4BF;
+      text-shadow: 0 0 40px rgba(13, 148, 136, 0.4);
+      margin-bottom: 4px;
+    }
+
+    /* Subtitle */
+    .subtitle {
+      font-size: 1.1em;
+      color: #94A3B8;
       font-weight: 400;
-      color: #ccc;
+      margin-bottom: 36px;
+      letter-spacing: 0.5px;
     }
 
-    .highlight {
-  color: #4CAF50;
-  }
+    /* Main headline */
+    .headline {
+      font-size: 1.65em;
+      font-weight: 600;
+      color: #F1F5F9;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
 
     #changing-text {
-    white-space: nowrap;
-    overflow: hidden;
-    color: #77dd77;
-    animation: blink-caret 0.75s step-end infinite;
+      color: #2DD4BF;
+      font-weight: 700;
+      position: relative;
+    }
+
+    #changing-text::after {
+      content: '|';
+      animation: blink-caret 0.75s step-end infinite;
+      color: #2DD4BF;
+      margin-left: 2px;
+    }
+
+    @keyframes blink-caret {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* CTA hint */
+    .cta-hint {
+      margin-top: 40px;
+      color: #64748B;
+      font-size: 0.9em;
+    }
+    .cta-hint a {
+      color: #0D9488;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Bottom badge */
+    .badge-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(13, 148, 136, 0.12);
+      border: 1px solid rgba(13, 148, 136, 0.25);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78em;
+      color: #94A3B8;
+    }
+    .badge strong {
+      color: #2DD4BF;
+    }
+
+    /* Language note */
+    .lang-note {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #475569;
+      font-size: 0.75em;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
   <div id="particles-js"></div>
   <div class="content">
-    <h1>Your Data, Your Right to <span id="changing-text"></span></h1>
-    <h2>Take control over your personal data with Gachena</h2>
+    <div class="shield-icon">🛡️</div>
+    <div class="brand">GACHENA</div>
+    <div class="subtitle">Detect &bull; Protect &bull; Control Your Digital Footprint</div>
+
+    <div class="headline">
+      Your Data, Your Right to <span id="changing-text"></span>
+    </div>
+
+    <div class="cta-hint">
+      Enable <strong>Demo Mode</strong> in the sidebar to explore instantly
+    </div>
+
+    <div class="badge-row">
+      <div class="badge">🤖 <strong>Gemini AI</strong> Email Analysis</div>
+      <div class="badge">📧 <strong>Gmail</strong> Integration</div>
+      <div class="badge">📜 <strong>GDPR</strong> Articles 15, 16, 17</div>
+      <div class="badge">🔒 <strong>Privacy</strong> First</div>
+    </div>
+
+    <div class="lang-note">"Gachena" means Shield in Afaan Oromo</div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script>
     particlesJS("particles-js", {
       "particles": {
         "number": {
-          "value": 300,
-          "density": {
-            "enable": true,
-            "value_area": 800
-          }
+          "value": 120,
+          "density": { "enable": true, "value_area": 900 }
         },
-        "color": {
-          "value": "#ffffff"
-        },
+        "color": { "value": "#0D9488" },
         "shape": {
-          "type": "edge",
-          "stroke": {
-            "width": 0,
-            "color": "#000000"
-          },
-          "polygon": {
-            "nb_sides": 5
-          }
+          "type": "circle",
+          "stroke": { "width": 0, "color": "#000000" }
         },
         "opacity": {
-          "value": 0.5,
-          "random": false,
-          "anim": {
-            "enable": false,
-            "speed": 1,
-            "opacity_min": 0.2,
-            "sync": false
-          }
+          "value": 0.35,
+          "random": true,
+          "anim": { "enable": false, "speed": 1, "opacity_min": 0.1, "sync": false }
         },
         "size": {
-          "value": 2,
+          "value": 2.5,
           "random": true,
-          "anim": {
-            "enable": false,
-            "speed": 40,
-            "size_min": 0.1,
-            "sync": false
-          }
+          "anim": { "enable": false, "speed": 4, "size_min": 0.1, "sync": false }
         },
         "line_linked": {
           "enable": true,
-          "distance": 100,
-          "color": "#77dd77",
-          "opacity": 0.22,
+          "distance": 140,
+          "color": "#0D9488",
+          "opacity": 0.15,
           "width": 1
         },
         "move": {
           "enable": true,
-          "speed": 0.2,
+          "speed": 0.4,
           "direction": "none",
-          "random": false,
+          "random": true,
           "straight": false,
           "out_mode": "out",
-          "bounce": true,
-          "attract": {
-            "enable": false,
-            "rotateX": 600,
-            "rotateY": 1200
-          }
+          "bounce": false,
+          "attract": { "enable": true, "rotateX": 600, "rotateY": 1200 }
         }
       },
       "interactivity": {
         "detect_on": "canvas",
         "events": {
-          "onhover": {
-            "enable": true,
-            "mode": "grab"
-          },
-          "onclick": {
-            "enable": true,
-            "mode": "repulse"
-          },
+          "onhover": { "enable": true, "mode": "grab" },
+          "onclick": { "enable": true, "mode": "repulse" },
           "resize": true
         },
         "modes": {
-          "grab": {
-            "distance": 100,
-            "line_linked": {
-              "opacity": 1
-            }
-          },
-          "bubble": {
-            "distance": 400,
-            "size": 2,
-            "duration": 2,
-            "opacity": 0.5,
-            "speed": 1
-          },
-          "repulse": {
-            "distance": 200,
-            "duration": 0.4
-          },
-          "push": {
-            "particles_nb": 2
-          },
-          "remove": {
-            "particles_nb": 3
-          }
+          "grab": { "distance": 140, "line_linked": { "opacity": 0.5 } },
+          "repulse": { "distance": 200, "duration": 0.4 }
         }
       },
       "retina_detect": true
     });
 
-   const phrases = ['Access', 'Erase', 'Modify'];
-        let currentPhrase = 0;
-        let currentCharacter = 0;
-        let htmlElement = document.getElementById('changing-text');
-        let forward = true;
-        let intervalId = null;
-        let typingSpeed = 200;
-        let delayBeforeDelete = 1000;
+    // Typewriter effect for GDPR rights
+    const phrases = ['Access', 'Erase', 'Modify'];
+    let currentPhrase = 0;
+    let currentChar = 0;
+    const el = document.getElementById('changing-text');
+    let forward = true;
+    let intervalId = null;
 
-        function typeWriter() {
-            if (forward) {
-                if (currentCharacter < phrases[currentPhrase].length) {
-                    currentCharacter++;
-                    htmlElement.textContent = phrases[currentPhrase].substr(0, currentCharacter);
-                } else {
-                    forward = false;
-                    clearInterval(intervalId);
-                    setTimeout(() => {
-                        intervalId = setInterval(typeWriter, typingSpeed);
-                    }, delayBeforeDelete); // Wait before starting to delete
-                }
-            } else {
-                if (currentCharacter > 0) {
-                    currentCharacter--;
-                    htmlElement.textContent = phrases[currentPhrase].substr(0, currentCharacter);
-                } else {
-                    forward = true;
-                    currentPhrase = (currentPhrase + 1) % phrases.length; // Move to the next phrase
-                }
-            }
+    function typeWriter() {
+      if (forward) {
+        if (currentChar < phrases[currentPhrase].length) {
+          currentChar++;
+          el.textContent = phrases[currentPhrase].substr(0, currentChar);
+        } else {
+          forward = false;
+          clearInterval(intervalId);
+          setTimeout(() => { intervalId = setInterval(typeWriter, 120); }, 1200);
         }
+      } else {
+        if (currentChar > 0) {
+          currentChar--;
+          el.textContent = phrases[currentPhrase].substr(0, currentChar);
+        } else {
+          forward = true;
+          currentPhrase = (currentPhrase + 1) % phrases.length;
+        }
+      }
+    }
 
-        intervalId = setInterval(typeWriter, typingSpeed);
+    intervalId = setInterval(typeWriter, 120);
   </script>
 </body>
 </html>

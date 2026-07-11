@@ -26,7 +26,9 @@ USER appuser
 EXPOSE 8080
 ENTRYPOINT ["streamlit", "run", "app.py", \
     "--theme.base=dark", \
-    "--theme.primaryColor=#77dd77", \
+    "--theme.primaryColor=#0D9488", \
+    "--theme.secondaryBackgroundColor=#1E293B", \
+    "--theme.textColor=#F1F5F9", \
     "--server.port=8080", \
     "--server.enableCORS=false", \
     "--server.enableWebsocketCompression=false", \
