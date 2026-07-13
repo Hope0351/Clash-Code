@@ -60,13 +60,22 @@ Built during the **[MLH Clash of Code Hackathon](https://events.mlh.io/events/13
 
 ## 🎬 Demo Video
 
-Watch the complete GACHENA workflow — from landing page to sending GDPR requests:
+Watch the complete GACHENA workflow — from landing page to sending GDPR compliance requests:
 
-<a href="docs/gachena_demo.webm" target="_blank">
-  <img src="https://img.shields.io/badge/▶_Watch_Full_Demo_(5_min)-GACHENA_Teal?style=for-the-badge" alt="Watch Demo Video"/>
+<a href="docs/gachena_demo.mp4" target="_blank">
+  <img src="docs/gachena_demo_thumbnail.png" alt="GACHENA Demo Video — Click to Play" width="100%"/>
 </a>
 
-*The demo walks through every feature: authentication, inbox scanning, AI analysis, company selection, and GDPR email generation.*
+<p align="center">
+  <b>▶ Click the video above to watch the full 5-minute demo</b><br/>
+  <i>Authentication → Inbox Scanning → AI Analysis → Company Selection → GDPR Email Generation</i>
+</p>
+
+<details>
+<summary>📁 Download the video file directly</summary>
+
+Right-click and save: <a href="docs/gachena_demo.mp4">gachena_demo.mp4</a> (~10 MB, H.264/AAC)
+</details>
 
 ---
 
@@ -294,7 +303,8 @@ Clash-Code/
 ├── .dockerignore               # Docker build exclusions
 ├── docs/
 │   ├── DOCUMENTATION.md        # Full technical documentation
-│   ├── gachena_demo.webm       # 5-minute demo video
+│   ├── gachena_demo.mp4       # 5-minute demo video (H.264/AAC)
+│   ├── gachena_demo_thumbnail.png # Video thumbnail with play button
 │   └── screenshots/
 │       ├── 01_landing_page.png
 │       ├── 02_demo_dashboard.png
