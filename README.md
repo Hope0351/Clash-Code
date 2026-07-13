@@ -74,7 +74,7 @@ Watch the complete GACHENA workflow — from landing page to sending GDPR compli
 <details>
 <summary>📁 Download the video file directly</summary>
 
-Right-click and save: <a href="docs/gachena_demo.mp4">gachena_demo.mp4</a> (~10 MB, H.264/AAC)
+Right-click and save: <a href="docs/gachena_demo.mp4">gachena_demo.mp4</a> (~23 MB, H.264, 5+ min)
 </details>
 
 ---
